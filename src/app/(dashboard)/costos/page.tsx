@@ -120,12 +120,12 @@ export default function CostosPage() {
     let recipeId = editing?.id
 
     if (editing) {
-      const { error } = await supabase.from('recipes').update(payload).eq('id', editing.id)
+      const { error } = await supabase.from('recipes').update(payload as any).eq('id', editing.id)
       if (error) { toast.error('Error al actualizar'); setSaving(false); return }
       await supabase.from('recipe_items').delete().eq('recipe_id', editing.id)
     } else {
       const { data: { user } } = await supabase.auth.getUser()
-      const { data, error } = await supabase.from('recipes').insert({ ...payload, user_id: user!.id }).select().single()
+      const { data, error } = await supabase.from('recipes').insert({ ...payload, user_id: user!.id } as any).select().single()
       if (error) { toast.error('Error al crear receta'); setSaving(false); return }
       recipeId = data.id
     }
