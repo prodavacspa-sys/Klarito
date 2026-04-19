@@ -92,7 +92,7 @@ export default function CostosPage() {
       monthly_units: String(r.monthly_units),
     })
     const { data } = await supabase.from('recipe_items').select('*').eq('recipe_id', r.id)
-    setItems(data?.map(i => ({ id: i.id, name: i.name, quantity: String(i.quantity), unit: i.unit, unit_cost: String(i.unit_cost) })) ?? [emptyItem()])
+    setItems((data as any[])?.map(i => ({ id: i.id, name: i.name, quantity: String(i.quantity), unit: i.unit, unit_cost: String(i.unit_cost) })) ?? [emptyItem()])
     setOpen(true)
   }
 
