@@ -136,7 +136,7 @@ export function DashboardClient({ businessName, ventasNetas, ivaDebito, ivaCredi
               <XAxis dataKey="day" tick={{ fontSize: 10, fill: '#a1a1aa' }} axisLine={false} tickLine={false} />
               <YAxis tick={{ fontSize: 10, fill: '#a1a1aa' }} axisLine={false} tickLine={false} tickFormatter={v => v > 0 ? `${v/1000}k` : '0'} />
               <Tooltip
-                formatter={(v: number) => [fmt(v), 'Ventas']}
+                formatter={(v) => [fmt(Number(v)), 'Ventas']}
                 contentStyle={{ border: '1px solid #e4e4e7', borderRadius: 8, fontSize: 12 }}
                 cursor={{ fill: '#f4f4f5' }}
               />
