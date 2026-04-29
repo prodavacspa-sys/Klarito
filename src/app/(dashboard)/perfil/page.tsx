@@ -103,8 +103,16 @@ export default function PerfilPage() {
             }
           </div>
           {subscriptionStatus !== 'active' && (
-            <Button className="w-full bg-zinc-900 hover:bg-zinc-700 text-white" onClick={() => toast.info('Integración Flow próximamente')}>
-              Activar suscripción
+            <Button
+              className="w-full bg-zinc-900 hover:bg-zinc-700 text-white"
+              onClick={async () => {
+                const res = await fetch('/api/flow/subscribe', { method: 'POST' })
+                const data = await res.json()
+                if (data.redirectUrl) window.location.href = data.redirectUrl
+                else toast.error('Error al iniciar suscripción')
+              }}
+            >
+              Activar suscripción — $5.160/mes
             </Button>
           )}
         </CardContent>
