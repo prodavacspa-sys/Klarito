@@ -7,7 +7,10 @@
       "Bash(npx shadcn@latest add scroll-area separator --yes)",
       "Bash(npx shadcn@latest add textarea --yes)",
       "Bash(npm install *)",
-      "Bash(npx shadcn@latest add card --yes)"
+      "Bash(npx shadcn@latest add card --yes)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git push *)"
     ]
   }
 }

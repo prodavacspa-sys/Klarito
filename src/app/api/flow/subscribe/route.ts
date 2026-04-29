@@ -41,21 +41,31 @@ export async function POST() {
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL!
   const planId = process.env.FLOW_PLAN_ID!
 
-  // Paso 1: crear cliente en Flow
-  const customer = await flowPost('/customer/create', {
-    name,
-    email,
+  // Paso 1: buscar o crear cliente en Flow
+  let customerId: string
+
+  const existingCustomer = await flowPost('/customer/getByExternalId', {
     externalId: user.id,
   })
 
-  if (!customer.customerId) {
-    return NextResponse.json({ error: customer }, { status: 400 })
+  if (existingCustomer.customerId) {
+    customerId = existingCustomer.customerId
+  } else {
+    const newCustomer = await flowPost('/customer/create', {
+      name,
+      email,
+      externalId: user.id,
+    })
+    if (!newCustomer.customerId) {
+      return NextResponse.json({ error: newCustomer }, { status: 400 })
+    }
+    customerId = newCustomer.customerId
   }
 
   // Paso 2: suscribir cliente al plan
   const subscription = await flowPost('/subscription/create', {
     planId,
-    customerId: customer.customerId,
+    customerId,
     urlReturn: `${siteUrl}/suscripcion/resultado`,
     urlConfirmation: `${siteUrl}/api/flow/webhook`,
   })
