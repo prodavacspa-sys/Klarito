@@ -1,6 +1,7 @@
 import { createHmac } from 'crypto'
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { sendWelcomeEmail, sendPaymentSuccessEmail, sendPaymentFailedEmail } from '@/lib/email'
 
 function flowSign(params: Record<string, string>, secret: string) {
   const keys = Object.keys(params).sort()
@@ -26,16 +27,40 @@ export async function POST(request: Request) {
 
   const supabase = await createClient()
 
-  if (event === 'subscription_created' || event === 'subscription_charged') {
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('email, business_name')
+    .eq('user_id', customerId)
+    .single()
+
+  const email = profile?.email ?? ''
+  const businessName = profile?.business_name ?? 'Usuario'
+
+  if (event === 'subscription_created') {
     await supabase.from('profiles')
       .update({ subscription_status: 'active', flow_subscription_id: subscriptionId })
       .eq('user_id', customerId)
+    await sendWelcomeEmail(email, businessName)
+  }
+
+  if (event === 'subscription_charged') {
+    await supabase.from('profiles')
+      .update({ subscription_status: 'active' })
+      .eq('user_id', customerId)
+    await sendPaymentSuccessEmail(email, businessName)
   }
 
   if (event === 'subscription_cancelled' || event === 'subscription_expired') {
     await supabase.from('profiles')
       .update({ subscription_status: 'inactive' })
       .eq('user_id', customerId)
+  }
+
+  if (event === 'subscription_charge_failed') {
+    await supabase.from('profiles')
+      .update({ subscription_status: 'inactive' })
+      .eq('user_id', customerId)
+    await sendPaymentFailedEmail(email, businessName)
   }
 
   return NextResponse.json({ ok: true })
