@@ -13,7 +13,7 @@ async function flowPost(endpoint: string, params: Record<string, string>) {
   const secretKey = process.env.FLOW_SECRET_KEY!
   const apiUrl = process.env.FLOW_API_URL!
 
-  const allParams = { ...params, apiKey }
+  const allParams: Record<string, string> = { ...params, apiKey }
   allParams.s = flowSign(allParams, secretKey)
 
   const body = new URLSearchParams(allParams)
