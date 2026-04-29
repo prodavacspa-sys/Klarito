@@ -20,7 +20,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         userEmail={user.email ?? ''}
         subscriptionStatus={profile?.subscription_status ?? 'inactive'}
       />
-      <main className="flex-1 overflow-auto">
+      <main className="flex-1 overflow-auto p-8 min-w-0">
         {children}
       </main>
     </div>

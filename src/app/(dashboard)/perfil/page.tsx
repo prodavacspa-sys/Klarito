@@ -95,7 +95,7 @@ export default function PerfilPage() {
           <div className="flex items-center justify-between bg-zinc-50 rounded-lg px-4 py-3">
             <div>
               <p className="text-sm font-medium text-zinc-900">Plan mensual</p>
-              <p className="text-xs text-zinc-400 mt-0.5">$5.000 + IVA / mes</p>
+              <p className="text-xs text-zinc-400 mt-0.5">$5.170 / mes (IVA incluido)</p>
             </div>
             {subscriptionStatus === 'active'
               ? <Badge variant="outline" className="text-emerald-600 border-emerald-200 bg-emerald-50">Activo</Badge>
@@ -112,7 +112,7 @@ export default function PerfilPage() {
                 else toast.error('Error al iniciar suscripción')
               }}
             >
-              Activar suscripción — $5.160/mes
+              Activar suscripción — $5.170/mes
             </Button>
           )}
         </CardContent>
