@@ -8,6 +8,23 @@ function flowSign(params: Record<string, string>, secret: string) {
   return createHmac('sha256', secret).update(toSign).digest('hex')
 }
 
+async function flowPost(endpoint: string, params: Record<string, string>) {
+  const apiKey = process.env.FLOW_API_KEY!
+  const secretKey = process.env.FLOW_SECRET_KEY!
+  const apiUrl = process.env.FLOW_API_URL!
+
+  const allParams = { ...params, apiKey }
+  allParams.s = flowSign(allParams, secretKey)
+
+  const body = new URLSearchParams(allParams)
+  const res = await fetch(`${apiUrl}${endpoint}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: body.toString(),
+  })
+  return res.json()
+}
+
 export async function POST() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -15,37 +32,37 @@ export async function POST() {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('email, business_name')
+    .select('email, business_name, flow_subscription_id')
     .eq('user_id', user.id)
     .single()
 
-  const apiKey = process.env.FLOW_API_KEY!
-  const secretKey = process.env.FLOW_SECRET_KEY!
-  const apiUrl = process.env.FLOW_API_URL!
+  const email = profile?.email ?? user.email!
+  const name = profile?.business_name ?? 'Usuario'
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL!
   const planId = process.env.FLOW_PLAN_ID!
 
-  const params: Record<string, string> = {
-    apiKey,
-    planId,
-    customerId: user.id,
-    email: profile?.email ?? user.email!,
-    urlReturn: `${process.env.NEXT_PUBLIC_SITE_URL}/suscripcion/resultado`,
-    urlConfirmation: `${process.env.NEXT_PUBLIC_SITE_URL}/api/flow/webhook`,
-  }
-
-  params.s = flowSign(params, secretKey)
-
-  const body = new URLSearchParams(params)
-  const res = await fetch(`${apiUrl}/subscription/create`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: body.toString(),
+  // Paso 1: crear cliente en Flow
+  const customer = await flowPost('/customer/create', {
+    name,
+    email,
+    externalId: user.id,
   })
 
-  const data = await res.json()
-  if (data.url && data.token) {
-    return NextResponse.json({ redirectUrl: `${data.url}?token=${data.token}` })
+  if (!customer.customerId) {
+    return NextResponse.json({ error: customer }, { status: 400 })
   }
 
-  return NextResponse.json({ error: data }, { status: 400 })
+  // Paso 2: suscribir cliente al plan
+  const subscription = await flowPost('/subscription/create', {
+    planId,
+    customerId: customer.customerId,
+    urlReturn: `${siteUrl}/suscripcion/resultado`,
+    urlConfirmation: `${siteUrl}/api/flow/webhook`,
+  })
+
+  if (subscription.url && subscription.token) {
+    return NextResponse.json({ redirectUrl: `${subscription.url}?token=${subscription.token}` })
+  }
+
+  return NextResponse.json({ error: subscription }, { status: 400 })
 }
