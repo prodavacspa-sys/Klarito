@@ -30,36 +30,40 @@ export async function POST() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
 
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL!
+  const planId = process.env.FLOW_PLAN_ID!
+
+  // Paso 1: obtener o crear customerId en Flow
+  let customerId: string
+
+  // Verificar si ya tenemos el flow_customer_id guardado
   const { data: profile } = await supabase
     .from('profiles')
     .select('email, business_name, flow_subscription_id')
     .eq('user_id', user.id)
     .single()
 
-  const email = profile?.email ?? user.email!
-  const name = profile?.business_name ?? 'Usuario'
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL!
-  const planId = process.env.FLOW_PLAN_ID!
-
-  // Paso 1: buscar o crear cliente en Flow
-  let customerId: string
-
-  const existingCustomer = await flowPost('/customer/getByExternalId', {
+  // Intentar crear cliente — si ya existe Flow devuelve error 501
+  const newCustomer = await flowPost('/customer/create', {
+    name: profile?.business_name ?? 'Usuario',
+    email: profile?.email ?? user.email!,
     externalId: user.id,
   })
 
-  if (existingCustomer.customerId) {
-    customerId = existingCustomer.customerId
-  } else {
-    const newCustomer = await flowPost('/customer/create', {
-      name,
-      email,
-      externalId: user.id,
-    })
-    if (!newCustomer.customerId) {
-      return NextResponse.json({ error: newCustomer }, { status: 400 })
-    }
+  if (newCustomer.customerId) {
     customerId = newCustomer.customerId
+  } else if (newCustomer.error?.code === 501) {
+    // Cliente ya existe — buscar por email
+    const existing = await flowPost('/customer/list', {
+      filter: profile?.email ?? user.email!,
+    })
+    if (existing.data?.[0]?.customerId) {
+      customerId = existing.data[0].customerId
+    } else {
+      return NextResponse.json({ error: 'No se pudo obtener cliente Flow' }, { status: 400 })
+    }
+  } else {
+    return NextResponse.json({ error: newCustomer }, { status: 400 })
   }
 
   // Paso 2: suscribir cliente al plan
