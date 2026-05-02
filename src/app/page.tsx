@@ -7,6 +7,10 @@ import {
   Calculator,
   BarChart3,
   CheckCircle2,
+  Gift,
+  Share2,
+  UserPlus,
+  Banknote,
 } from "lucide-react";
 import { RegistroModal } from "@/components/landing/registro-modal";
 
@@ -116,6 +120,76 @@ export default function Home() {
                 </p>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Referidos */}
+      <section className="w-full py-20 px-6 bg-emerald-950">
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center space-y-4 mb-14">
+            <span className="inline-flex items-center gap-1.5 bg-emerald-900 text-emerald-300 text-xs font-medium px-3 py-1 rounded-full">
+              <Gift className="h-3.5 w-3.5" />
+              Programa de referidos
+            </span>
+            <h2 className="text-3xl sm:text-4xl font-bold text-white leading-tight">
+              Invita amigos y usa <br />
+              <span className="text-emerald-400">Klarito gratis.</span>
+            </h2>
+            <p className="text-emerald-200/70 max-w-md mx-auto text-base">
+              Cada emprendedor que invites y pague su primer mes te da{" "}
+              <strong className="text-emerald-300">$500 de crédito</strong>.
+              Con 10 referidos, tu suscripción es completamente gratis.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-14">
+            {[
+              {
+                icon: Share2,
+                step: "1",
+                title: "Comparte tu enlace",
+                desc: "Desde tu panel obtienes un enlace único de referido para compartir.",
+              },
+              {
+                icon: UserPlus,
+                step: "2",
+                title: "Tu amigo se registra",
+                desc: "Se crea una cuenta usando tu enlace y activa su suscripción.",
+              },
+              {
+                icon: Banknote,
+                step: "3",
+                title: "Tú recibes $500",
+                desc: "El crédito se aplica automáticamente a tu próxima factura.",
+              },
+            ].map(({ icon: Icon, step, title, desc }) => (
+              <div
+                key={step}
+                className="bg-emerald-900/40 border border-emerald-800/50 rounded-2xl p-6 space-y-3"
+              >
+                <div className="flex items-center gap-3">
+                  <span className="flex items-center justify-center w-7 h-7 rounded-full bg-emerald-400 text-emerald-950 text-xs font-bold flex-shrink-0">
+                    {step}
+                  </span>
+                  <Icon className="h-4 w-4 text-emerald-400" />
+                </div>
+                <h3 className="font-semibold text-white">{title}</h3>
+                <p className="text-sm text-emerald-200/60 leading-relaxed">{desc}</p>
+              </div>
+            ))}
+          </div>
+
+          <div className="bg-emerald-400 rounded-2xl p-8 flex flex-col sm:flex-row items-center justify-between gap-6">
+            <div>
+              <p className="text-emerald-950 font-bold text-xl leading-tight">
+                10 referidos = servicio gratis
+              </p>
+              <p className="text-emerald-800 text-sm mt-1">
+                $500 × 10 = $5.170 — exactamente el valor mensual de Klarito.
+              </p>
+            </div>
+            <RegistroModal variant="referral" />
           </div>
         </div>
       </section>

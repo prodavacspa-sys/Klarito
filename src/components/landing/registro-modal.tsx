@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { ArrowRight, CheckCircle2, Loader2 } from 'lucide-react'
 
-export function RegistroModal({ fullWidth }: { fullWidth?: boolean }) {
+export function RegistroModal({ fullWidth, variant }: { fullWidth?: boolean; variant?: 'referral' }) {
   const [open, setOpen] = useState(false)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -43,7 +43,7 @@ export function RegistroModal({ fullWidth }: { fullWidth?: boolean }) {
     <>
       <button
         onClick={openModal}
-        className={`inline-flex items-center justify-center gap-2 bg-zinc-900 text-white font-medium px-6 py-3 rounded-lg hover:bg-zinc-700 transition-colors text-base cursor-pointer${fullWidth ? ' w-full' : ''}`}
+        className={`inline-flex items-center justify-center gap-2 font-medium px-6 py-3 rounded-lg transition-colors text-base cursor-pointer${fullWidth ? ' w-full' : ''}${variant === 'referral' ? ' bg-emerald-950 text-white hover:bg-emerald-900' : ' bg-zinc-900 text-white hover:bg-zinc-700'}`}
       >
         Empieza gratis por 7 días
         <ArrowRight className="h-4 w-4" />
