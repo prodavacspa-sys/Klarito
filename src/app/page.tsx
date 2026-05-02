@@ -13,6 +13,7 @@ import {
   Banknote,
 } from "lucide-react";
 import { RegistroModal } from "@/components/landing/registro-modal";
+import { ContactForm } from "@/components/landing/contact-form";
 
 const features = [
   {
@@ -241,6 +242,19 @@ export default function Home() {
             <p className="text-xs text-zinc-400">
               Cancela cuando quieras. Sin permanencia.
             </p>
+          </div>
+        </div>
+      </section>
+
+      {/* Contacto */}
+      <section className="w-full py-20 px-6 bg-zinc-50">
+        <div className="max-w-2xl mx-auto">
+          <div className="text-center space-y-2 mb-10">
+            <h2 className="text-2xl font-semibold text-zinc-900">¿Tienes dudas?</h2>
+            <p className="text-sm text-zinc-500">Escríbenos y te respondemos a la brevedad.</p>
+          </div>
+          <div className="bg-white border border-zinc-100 rounded-2xl p-8 shadow-sm">
+            <ContactForm />
           </div>
         </div>
       </section>

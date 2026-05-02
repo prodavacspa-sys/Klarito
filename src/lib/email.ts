@@ -65,6 +65,26 @@ export async function sendPaymentSuccessEmail(email: string, businessName: strin
   })
 }
 
+export async function sendContactEmail(name: string, email: string, message: string) {
+  await resend.emails.send({
+    from: FROM,
+    to: 'prodavac.spa@gmail.com',
+    replyTo: email,
+    subject: `Consulta de ${name} — Klarito`,
+    html: `
+      <div style="font-family: sans-serif; max-width: 520px; margin: 0 auto; padding: 32px;">
+        <h2 style="font-size: 20px; color: #18181b; margin-bottom: 4px;">Nueva consulta desde la landing</h2>
+        <p style="color: #a1a1aa; font-size: 13px; margin-top: 0;">Responde directamente a este correo para contestar al usuario.</p>
+        <hr style="border: none; border-top: 1px solid #e4e4e7; margin: 20px 0;" />
+        <p style="color: #52525b; margin: 0 0 4px;"><strong>Nombre:</strong> ${name}</p>
+        <p style="color: #52525b; margin: 0 0 4px;"><strong>Email:</strong> ${email}</p>
+        <p style="color: #52525b; margin: 16px 0 4px;"><strong>Mensaje:</strong></p>
+        <p style="color: #52525b; background: #f4f4f5; padding: 16px; border-radius: 8px; white-space: pre-wrap;">${message}</p>
+      </div>
+    `,
+  })
+}
+
 export async function sendPaymentFailedEmail(email: string, businessName: string) {
   await resend.emails.send({
     from: FROM,
