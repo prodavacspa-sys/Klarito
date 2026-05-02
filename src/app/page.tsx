@@ -94,9 +94,6 @@ export default function Home() {
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
             <RegistroModal />
-            <span className="text-sm text-zinc-400">
-              Sin tarjeta de crédito
-            </span>
           </div>
         </div>
       </section>
@@ -138,7 +135,7 @@ export default function Home() {
             </h2>
             <p className="text-emerald-200/70 max-w-md mx-auto text-base">
               Cada emprendedor que invites y pague su primer mes te da{" "}
-              <strong className="text-emerald-300">$500 de crédito</strong>.
+              <strong className="text-emerald-300">$500 de descuento</strong>.
               Con 10 referidos, tu suscripción es completamente gratis.
             </p>
           </div>
@@ -161,7 +158,7 @@ export default function Home() {
                 icon: Banknote,
                 step: "3",
                 title: "Tú recibes $500",
-                desc: "El crédito se aplica automáticamente a tu próxima factura.",
+                desc: "El descuento se aplica automáticamente a tu próxima factura.",
               },
             ].map(({ icon: Icon, step, title, desc }) => (
               <div
