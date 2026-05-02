@@ -73,7 +73,7 @@ export default function Home() {
               href="/registro"
               className="text-sm font-medium bg-zinc-900 text-white px-4 py-2 rounded-lg hover:bg-zinc-700 transition-colors"
             >
-              Prueba gratis
+              Regístrate
             </Link>
           </div>
         </div>
