@@ -1,25 +1,24 @@
 import { createClient } from '@/lib/supabase/server'
 import { DashboardClient } from '@/components/app/dashboard-client'
 
-export default async function DashboardPage() {
+export default async function DashboardPage({ searchParams }: { searchParams: { month?: string } }) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
   const now = new Date()
-  const firstDay = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
-  const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString()
+  const targetDate = searchParams.month
+    ? new Date(searchParams.month + '-01')
+    : now
 
-  const [
-    { data: sales },
-    { data: expenses },
-    { data: saleItems },
-    { data: profile },
-  ] = await Promise.all([
+  const firstDay = new Date(targetDate.getFullYear(), targetDate.getMonth(), 1).toISOString()
+  const lastDay = new Date(targetDate.getFullYear(), targetDate.getMonth() + 1, 0, 23, 59, 59).toISOString()
+
+  const [{ data: sales }, { data: expenses }] = await Promise.all([
     supabase.from('sales').select('net_amount, iva_amount, total_amount, created_at').eq('user_id', user!.id).gte('created_at', firstDay).lte('created_at', lastDay),
     supabase.from('expenses').select('net_amount, iva_amount, total_amount, expense_category, document_type, created_at').eq('user_id', user!.id).gte('created_at', firstDay).lte('created_at', lastDay),
-    supabase.from('sale_items').select('quantity, unit_price, subtotal, product:products(cost_price)').eq('sales.user_id', user!.id),
-    supabase.from('profiles').select('business_name').eq('user_id', user!.id).single(),
   ])
+
+  const { data: profile } = await supabase.from('profiles').select('business_name').eq('user_id', user!.id).single()
 
   const ventasNetas = sales?.reduce((s, v) => s + v.net_amount, 0) ?? 0
   const ivaDebito = sales?.reduce((s, v) => s + v.iva_amount, 0) ?? 0
@@ -35,11 +34,14 @@ export default async function DashboardPage() {
     return acc
   }, {}) ?? {}
 
-  const chartData = Array.from({ length: now.getDate() }, (_, i) => {
-    const d = new Date(now.getFullYear(), now.getMonth(), i + 1)
+  const daysInMonth = new Date(targetDate.getFullYear(), targetDate.getMonth() + 1, 0).getDate()
+  const chartData = Array.from({ length: daysInMonth }, (_, i) => {
+    const d = new Date(targetDate.getFullYear(), targetDate.getMonth(), i + 1)
     const key = d.toISOString().slice(0, 10)
     return { day: i + 1, ventas: dailySales[key] ?? 0 }
   })
+
+  const selectedMonth = `${targetDate.getFullYear()}-${String(targetDate.getMonth() + 1).padStart(2, '0')}`
 
   return (
     <DashboardClient
@@ -50,7 +52,8 @@ export default async function DashboardPage() {
       gastosFijos={gastosFijos}
       gastosVariables={gastosVariables}
       chartData={chartData}
-      month={now.toLocaleString('es-CL', { month: 'long', year: 'numeric' })}
+      month={targetDate.toLocaleString('es-CL', { month: 'long', year: 'numeric' })}
+      selectedMonth={selectedMonth}
       totalTransacciones={totalTransacciones}
       totalVentasBrutas={totalVentasBrutas}
     />

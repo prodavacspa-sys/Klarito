@@ -1,21 +1,28 @@
 import { createClient } from '@/lib/supabase/server'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Plus, Download } from 'lucide-react'
+import { Plus } from 'lucide-react'
 import Link from 'next/link'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 
-export default async function VentasPage() {
+const PAGE_SIZE = 50
+
+export default async function VentasPage({ searchParams }: { searchParams: { page?: string } }) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
+  const page = parseInt(searchParams.page ?? '1')
+  const from = (page - 1) * PAGE_SIZE
+  const to = from + PAGE_SIZE - 1
 
-  const { data: sales } = await supabase
+  const { data: sales, count } = await supabase
     .from('sales')
-    .select('*, sale_items(quantity, unit_price, product:products(name))')
+    .select('*, sale_items(quantity, unit_price, product:products(name))', { count: 'exact' })
     .eq('user_id', user!.id)
     .order('created_at', { ascending: false })
-    .limit(50)
+    .range(from, to)
+
+  const totalPages = Math.ceil((count ?? 0) / PAGE_SIZE)
 
   const fmt = (n: number) => new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 }).format(n)
 
@@ -47,32 +54,51 @@ export default async function VentasPage() {
             </Link>
           </div>
         ) : (
-          <div className="divide-y divide-zinc-100">
-            {sales.map(sale => (
-              <div key={sale.id} className="px-5 py-4 hover:bg-zinc-50 transition-colors">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium text-zinc-900">{fmt(sale.total_amount)}</span>
-                      <Badge variant="outline" className="text-xs border-zinc-200 text-zinc-400">
-                        {sale.notes?.replace('Pago: ', '') ?? 'efectivo'}
-                      </Badge>
+          <>
+            <div className="divide-y divide-zinc-100">
+              {sales.map(sale => (
+                <div key={sale.id} className="px-5 py-4 hover:bg-zinc-50 transition-colors">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium text-zinc-900">{fmt(sale.total_amount)}</span>
+                        <Badge variant="outline" className="text-xs border-zinc-200 text-zinc-400">
+                          {sale.notes?.replace('Pago: ', '') ?? 'efectivo'}
+                        </Badge>
+                      </div>
+                      <p className="text-xs text-zinc-400 mt-1">
+                        {format(new Date(sale.created_at), "d 'de' MMMM, HH:mm", { locale: es })}
+                      </p>
+                      <p className="text-xs text-zinc-400 mt-0.5">
+                        {sale.sale_items?.map((i: any) => `${i.quantity}× ${i.product?.name}`).join(', ')}
+                      </p>
                     </div>
-                    <p className="text-xs text-zinc-400 mt-1">
-                      {format(new Date(sale.created_at), "d 'de' MMMM, HH:mm", { locale: es })}
-                    </p>
-                    <p className="text-xs text-zinc-400 mt-0.5">
-                      {sale.sale_items?.map((i: any) => `${i.quantity}× ${i.product?.name}`).join(', ')}
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-xs text-zinc-400">Neto: <span className="tabular-nums">{fmt(sale.net_amount)}</span></p>
-                    <p className="text-xs text-zinc-400">IVA: <span className="tabular-nums">{fmt(sale.iva_amount)}</span></p>
+                    <div className="text-right">
+                      <p className="text-xs text-zinc-400">Neto: <span className="tabular-nums">{fmt(sale.net_amount)}</span></p>
+                      <p className="text-xs text-zinc-400">IVA: <span className="tabular-nums">{fmt(sale.iva_amount)}</span></p>
+                    </div>
                   </div>
                 </div>
+              ))}
+            </div>
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between px-5 py-3 border-t border-zinc-100">
+                <p className="text-xs text-zinc-400">Página {page} de {totalPages} — {count} ventas en total</p>
+                <div className="flex gap-2">
+                  {page > 1 && (
+                    <Link href={`/ventas?page=${page - 1}`}>
+                      <Button variant="outline" size="sm" className="border-zinc-200 text-zinc-600">Anterior</Button>
+                    </Link>
+                  )}
+                  {page < totalPages && (
+                    <Link href={`/ventas?page=${page + 1}`}>
+                      <Button variant="outline" size="sm" className="border-zinc-200 text-zinc-600">Siguiente</Button>
+                    </Link>
+                  )}
+                </div>
               </div>
-            ))}
-          </div>
+            )}
+          </>
         )}
       </div>
     </div>

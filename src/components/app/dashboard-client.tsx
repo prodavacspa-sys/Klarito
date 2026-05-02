@@ -12,11 +12,12 @@ interface Props {
   gastosVariables: number
   chartData: { day: number; ventas: number }[]
   month: string
+  selectedMonth: string
   totalTransacciones: number
   totalVentasBrutas: number
 }
 
-export function DashboardClient({ businessName, ventasNetas, ivaDebito, ivaCredito, gastosFijos, gastosVariables, chartData, month, totalTransacciones, totalVentasBrutas }: Props) {
+export function DashboardClient({ businessName, ventasNetas, ivaDebito, ivaCredito, gastosFijos, gastosVariables, chartData, month, selectedMonth, totalTransacciones, totalVentasBrutas }: Props) {
   const fmt = (n: number) => new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 }).format(n)
 
   const utilidadBruta = ventasNetas - gastosVariables
@@ -37,6 +38,15 @@ export function DashboardClient({ businessName, ventasNetas, ivaDebito, ivaCredi
       <div>
         <h1 className="text-2xl font-semibold text-zinc-900">Dashboard</h1>
         <p className="text-sm text-zinc-500 mt-1 capitalize">{month} — {businessName}</p>
+        <div className="flex items-center gap-2 mt-3">
+          <input
+            type="month"
+            value={selectedMonth}
+            max={new Date().toISOString().slice(0, 7)}
+            onChange={e => window.location.href = `/dashboard?month=${e.target.value}`}
+            className="text-sm border border-zinc-200 rounded-lg px-3 py-1.5 text-zinc-600 bg-white focus:outline-none focus:ring-1 focus:ring-zinc-300"
+          />
+        </div>
       </div>
 
       {/* Tarjetas resumen */}
