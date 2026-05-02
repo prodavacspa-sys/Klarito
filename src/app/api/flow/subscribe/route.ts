@@ -75,7 +75,7 @@ export async function POST() {
   // Paso 2: registrar tarjeta y suscribir via URL de pago
   const register = await flowPost('/customer/register', {
     customerId,
-    urlReturn: `${siteUrl}/api/flow/register-callback?customerId=${customerId}&planId=${planId}&userId=${user.id}`,
+    url_return: `${siteUrl}/api/flow/register-callback?customerId=${customerId}&planId=${planId}&userId=${user.id}`,
   })
 
   if (register.url && register.token) {
