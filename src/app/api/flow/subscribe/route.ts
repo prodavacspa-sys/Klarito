@@ -39,8 +39,9 @@ export async function POST() {
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL!
   const planId = process.env.FLOW_PLAN_ID!
 
-  // Paso 1: crear o recuperar cliente
   let customerId: string
+
+  // Intentar crear cliente en Flow
   const newCustomer = await flowPost('/customer/create', {
     name,
     email,
@@ -49,15 +50,26 @@ export async function POST() {
 
   if (newCustomer.customerId) {
     customerId = newCustomer.customerId
-  } else {
-    const existing = await flowPost('/customer/list', {
+  } else if (newCustomer.error?.code === 501) {
+    // Ya existe — buscar por email
+    const listResult = await flowPost('/customer/list', {
       filter: email,
+      start: '0',
+      limit: '10',
     })
-    if (existing.data?.[0]?.customerId) {
-      customerId = existing.data[0].customerId
+
+    const customers = listResult.data ?? []
+    const match = customers.find((c: any) => c.externalId === user.id || c.email === email)
+
+    if (match?.customerId) {
+      customerId = match.customerId
+    } else if (customers.length > 0) {
+      customerId = customers[0].customerId
     } else {
-      return NextResponse.json({ error: 'No se pudo obtener cliente' }, { status: 400 })
+      return NextResponse.json({ error: 'Cliente no encontrado en Flow' }, { status: 400 })
     }
+  } else {
+    return NextResponse.json({ error: newCustomer }, { status: 400 })
   }
 
   // Paso 2: registrar tarjeta y suscribir via URL de pago
