@@ -2,6 +2,7 @@ import { createHmac } from 'crypto'
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { sendWelcomeEmail, sendPaymentSuccessEmail, sendPaymentFailedEmail } from '@/lib/email'
+import { creditReferrer } from '@/lib/referrals'
 
 function flowSign(params: Record<string, string>, secret: string) {
   const keys = Object.keys(params).sort()
@@ -48,6 +49,7 @@ export async function POST(request: Request) {
       .update({ subscription_status: 'active' })
       .eq('user_id', customerId)
     await sendPaymentSuccessEmail(email, businessName)
+    await creditReferrer(customerId)
   }
 
   if (event === 'subscription_cancelled' || event === 'subscription_expired') {

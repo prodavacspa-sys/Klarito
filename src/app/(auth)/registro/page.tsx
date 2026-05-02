@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
@@ -13,11 +13,17 @@ export default function RegistroPage() {
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
 
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const ref = params.get('ref')
+    if (ref) localStorage.setItem('klarito_ref', ref)
+  }, [])
+
   async function handleRegister(e: React.FormEvent) {
     e.preventDefault()
     setLoading(true)
     const supabase = createClient()
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
@@ -25,6 +31,13 @@ export default function RegistroPage() {
     if (error) {
       toast.error(error.message)
     } else {
+      const ref = localStorage.getItem('klarito_ref')
+      if (ref && data.user) {
+        await supabase.from('profiles')
+          .update({ referred_by: ref })
+          .eq('user_id', data.user.id)
+        localStorage.removeItem('klarito_ref')
+      }
       toast.success('Revisa tu correo para confirmar tu cuenta')
       router.push('/login')
     }
