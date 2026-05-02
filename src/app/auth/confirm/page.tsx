@@ -11,28 +11,16 @@ export default function AuthConfirmPage() {
     const supabase = createClient()
 
     async function handleConfirm() {
-      // Esperar un momento para que Supabase procese el token del hash
       await new Promise(r => setTimeout(r, 1500))
 
-      const { data: { session }, error } = await supabase.auth.getSession()
+      const { data: { session } } = await supabase.auth.getSession()
 
       if (session?.user) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('flow_subscription_id')
-          .eq('user_id', session.user.id)
-          .single()
-
-        if (profile?.flow_subscription_id) {
-          router.push('/dashboard')
-        } else {
-          router.push('/registrar-tarjeta')
-        }
+        router.push('/dashboard')
         return
       }
 
-      // Si no hay sesión aún, escuchar cambios
-      const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
         if (event === 'PASSWORD_RECOVERY') {
           subscription.unsubscribe()
           router.push('/actualizar-password')
@@ -41,21 +29,10 @@ export default function AuthConfirmPage() {
 
         if ((event === 'SIGNED_IN' || event === 'USER_UPDATED') && session?.user) {
           subscription.unsubscribe()
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('flow_subscription_id')
-            .eq('user_id', session.user.id)
-            .single()
-
-          if (profile?.flow_subscription_id) {
-            router.push('/dashboard')
-          } else {
-            router.push('/registrar-tarjeta')
-          }
+          router.push('/dashboard')
         }
       })
 
-      // Timeout de seguridad — si en 10 segundos no hay sesión, ir al login
       setTimeout(() => {
         subscription.unsubscribe()
         router.push('/login?error=timeout')

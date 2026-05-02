@@ -8,13 +8,12 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { toast } from 'sonner'
 import Link from 'next/link'
-import { Loader2, CheckCircle2, CreditCard, Clock, Shield } from 'lucide-react'
+import { Loader2, CheckCircle2 } from 'lucide-react'
 
 export default function RegistroPage() {
   const supabase = createClient()
-  const [step, setStep] = useState<'form' | 'payment' | 'sent'>('form')
+  const [step, setStep] = useState<'form' | 'sent'>('form')
   const [loading, setLoading] = useState(false)
-  const [userId, setUserId] = useState('')
   const [form, setForm] = useState({
     firstName: '',
     lastName: '',
@@ -70,50 +69,24 @@ export default function RegistroPage() {
       referred_by: form.referralCode || null,
     }).eq('user_id', data.user.id)
 
-    setUserId(data.user.id)
-    setStep('payment')
+    setStep('sent')
     setLoading(false)
   }
 
-  async function handlePayment() {
-    window.location.href = '/registrar-tarjeta'
-  }
-
-  if (step === 'payment') {
+  if (step === 'sent') {
     return (
       <div className="min-h-screen bg-zinc-50 flex items-center justify-center p-4">
-        <div className="w-full max-w-md space-y-4">
-          <div className="text-center mb-8">
-            <h1 className="text-2xl font-semibold text-zinc-900 tracking-tight">Klarito</h1>
-            <p className="text-sm text-zinc-500 mt-1">Tus finanzas, en orden.</p>
+        <div className="w-full max-w-sm text-center space-y-4">
+          <CheckCircle2 className="h-12 w-12 text-emerald-500 mx-auto" />
+          <div>
+            <h2 className="text-xl font-semibold text-zinc-900">Revisa tu correo</h2>
+            <p className="text-sm text-zinc-500 mt-2">
+              Te enviamos un enlace de confirmación a <strong>{form.email}</strong>. Haz clic en él para activar tu cuenta.
+            </p>
           </div>
-          <Card className="border-zinc-200 shadow-none">
-            <CardHeader className="pb-4">
-              <CardTitle className="text-lg font-medium">Registra tu medio de pago</CardTitle>
-              <CardDescription>Último paso para activar tu cuenta</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-5">
-              <div className="space-y-3">
-                <div className="flex items-center gap-3 text-sm text-zinc-600">
-                  <Clock className="h-4 w-4 text-emerald-500 flex-shrink-0" />
-                  <span><strong>7 días gratis</strong> — sin cobro hasta el día 8</span>
-                </div>
-                <div className="flex items-center gap-3 text-sm text-zinc-600">
-                  <CreditCard className="h-4 w-4 text-zinc-400 flex-shrink-0" />
-                  <span>Luego se cobra <strong>$5.170/mes</strong> automáticamente</span>
-                </div>
-                <div className="flex items-center gap-3 text-sm text-zinc-600">
-                  <Shield className="h-4 w-4 text-zinc-400 flex-shrink-0" />
-                  <span>Cancela cuando quieras desde tu perfil</span>
-                </div>
-              </div>
-              <Button className="w-full bg-zinc-900 hover:bg-zinc-700 text-white" onClick={handlePayment} disabled={loading}>
-                {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Registrar tarjeta y comenzar prueba
-              </Button>
-              <p className="text-xs text-zinc-400 text-center">Serás redirigido a Flow.cl para ingresar tu tarjeta de forma segura</p>
-            </CardContent>
-          </Card>
+          <p className="text-xs text-zinc-400">
+            ¿No lo ves? Revisa tu carpeta de spam.
+          </p>
         </div>
       </div>
     )
@@ -178,7 +151,7 @@ export default function RegistroPage() {
             <CardFooter className="flex flex-col gap-3">
               <Button type="submit" disabled={loading} className="w-full bg-zinc-900 hover:bg-zinc-700 text-white">
                 {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Continuar al pago
+                Crear cuenta
               </Button>
               <p className="text-sm text-zinc-500 text-center">
                 ¿Ya tienes cuenta?{' '}
