@@ -6,16 +6,20 @@ import { createClient } from '@/lib/supabase/client'
 
 export default function AuthConfirmPage() {
   const router = useRouter()
-  const supabase = createClient()
 
   useEffect(() => {
-    async function handleConfirm() {
-      const { data: { session } } = await supabase.auth.getSession()
+    const supabase = createClient()
 
-      if (session) {
+    async function handleConfirm() {
+      // Esperar un momento para que Supabase procese el token del hash
+      await new Promise(r => setTimeout(r, 1500))
+
+      const { data: { session }, error } = await supabase.auth.getSession()
+
+      if (session?.user) {
         const { data: profile } = await supabase
           .from('profiles')
-          .select('subscription_status, flow_subscription_id')
+          .select('flow_subscription_id')
           .eq('user_id', session.user.id)
           .single()
 
@@ -27,11 +31,16 @@ export default function AuthConfirmPage() {
         return
       }
 
+      // Si no hay sesión aún, escuchar cambios
       const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
         if (event === 'PASSWORD_RECOVERY') {
-          router.push('/actualizar-password')
           subscription.unsubscribe()
-        } else if (event === 'SIGNED_IN' && session) {
+          router.push('/actualizar-password')
+          return
+        }
+
+        if ((event === 'SIGNED_IN' || event === 'USER_UPDATED') && session?.user) {
+          subscription.unsubscribe()
           const { data: profile } = await supabase
             .from('profiles')
             .select('flow_subscription_id')
@@ -43,9 +52,14 @@ export default function AuthConfirmPage() {
           } else {
             router.push('/suscripcion/registrar-tarjeta')
           }
-          subscription.unsubscribe()
         }
       })
+
+      // Timeout de seguridad — si en 10 segundos no hay sesión, ir al login
+      setTimeout(() => {
+        subscription.unsubscribe()
+        router.push('/login?error=timeout')
+      }, 10000)
     }
 
     handleConfirm()
