@@ -15,6 +15,10 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Klarito — ERP simple para emprendedores",
   description: "Controla ventas, gastos, inventario y punto de equilibrio de tu negocio. Simple, accesible y hecho para Chile.",
+  icons: {
+    icon: "/favicon.ico",
+    apple: "/apple-touch-icon.png",
+  },
 };
 
 export default function RootLayout({
