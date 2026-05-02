@@ -76,20 +76,7 @@ export default function RegistroPage() {
   }
 
   async function handlePayment() {
-    setLoading(true)
-    try {
-      const res = await fetch('/api/flow/subscribe', { method: 'POST' })
-      const data = await res.json()
-      if (data.redirectUrl) {
-        window.location.href = data.redirectUrl
-      } else {
-        toast.error('Error al conectar con el sistema de pago')
-        setLoading(false)
-      }
-    } catch {
-      toast.error('Error de conexión')
-      setLoading(false)
-    }
+    window.location.href = '/registrar-tarjeta'
   }
 
   if (step === 'payment') {

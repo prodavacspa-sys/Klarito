@@ -26,7 +26,7 @@ export default function AuthConfirmPage() {
         if (profile?.flow_subscription_id) {
           router.push('/dashboard')
         } else {
-          router.push('/suscripcion/registrar-tarjeta')
+          router.push('/registrar-tarjeta')
         }
         return
       }
@@ -50,7 +50,7 @@ export default function AuthConfirmPage() {
           if (profile?.flow_subscription_id) {
             router.push('/dashboard')
           } else {
-            router.push('/suscripcion/registrar-tarjeta')
+            router.push('/registrar-tarjeta')
           }
         }
       })

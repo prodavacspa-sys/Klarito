@@ -29,7 +29,8 @@ export async function middleware(request: NextRequest) {
     request.nextUrl.pathname.startsWith('/registro') ||
     request.nextUrl.pathname.startsWith('/recuperar-password') ||
     request.nextUrl.pathname.startsWith('/actualizar-password') ||
-    request.nextUrl.pathname.startsWith('/auth')
+    request.nextUrl.pathname.startsWith('/auth') ||
+    request.nextUrl.pathname.startsWith('/registrar-tarjeta')
 
   if (!user && !isPublic) {
     const url = request.nextUrl.clone()
