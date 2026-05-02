@@ -23,6 +23,20 @@ async function flowPost(endpoint: string, params: Record<string, string>) {
   return res.json()
 }
 
+async function flowGet(endpoint: string, params: Record<string, string>) {
+  const apiKey = process.env.FLOW_API_KEY!
+  const secretKey = process.env.FLOW_SECRET_KEY!
+  const apiUrl = process.env.FLOW_API_URL!
+  const allParams: Record<string, string> = { ...params, apiKey }
+  allParams.s = flowSign(allParams, secretKey)
+  const qs = new URLSearchParams(allParams).toString()
+  const res = await fetch(`${apiUrl}${endpoint}?${qs}`, {
+    method: 'GET',
+    headers: { 'Content-Type': 'application/json' },
+  })
+  return res.json()
+}
+
 export async function POST() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -41,7 +55,6 @@ export async function POST() {
 
   let customerId: string
 
-  // Intentar crear cliente en Flow
   const newCustomer = await flowPost('/customer/create', {
     name,
     email,
@@ -50,26 +63,28 @@ export async function POST() {
 
   if (newCustomer.customerId) {
     customerId = newCustomer.customerId
-  } else if (newCustomer.error?.code === 501) {
-    // Ya existe — buscar por email
-    const listResult = await flowPost('/customer/list', {
-      filter: email,
-      start: '0',
-      limit: '10',
+  } else {
+    // Buscar cliente existente por externalId via GET
+    const existing = await flowGet('/customer/getByExternalId', {
+      externalId: user.id,
     })
 
-    const customers = listResult.data ?? []
-    const match = customers.find((c: any) => c.externalId === user.id || c.email === email)
-
-    if (match?.customerId) {
-      customerId = match.customerId
-    } else if (customers.length > 0) {
-      customerId = customers[0].customerId
+    if (existing.customerId) {
+      customerId = existing.customerId
     } else {
-      return NextResponse.json({ error: 'Cliente no encontrado en Flow' }, { status: 400 })
+      // Último recurso: buscar por email
+      const list = await flowGet('/customer/list', {
+        filter: email,
+        start: '0',
+        limit: '5',
+      })
+      const customers = list.data ?? []
+      if (customers.length > 0) {
+        customerId = customers[0].customerId
+      } else {
+        return NextResponse.json({ error: 'No se pudo obtener cliente Flow', detail: { newCustomer, existing, list } }, { status: 400 })
+      }
     }
-  } else {
-    return NextResponse.json({ error: newCustomer }, { status: 400 })
   }
 
   // Paso 2: registrar tarjeta y suscribir via URL de pago
