@@ -10,7 +10,11 @@
       "Bash(npx shadcn@latest add card --yes)",
       "Bash(git add *)",
       "Bash(git commit *)",
-      "Bash(git push *)"
+      "Bash(git push *)",
+      "Bash(npx next *)",
+      "Bash(npx tsc *)",
+      "mcp__Claude_Preview__preview_start",
+      "PowerShell(Copy-Item *)"
     ]
   }
 }

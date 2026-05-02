@@ -1,0 +1,140 @@
+# Instrucciones: Lógica de cupones por referidos
+
+## Contexto
+- 5-9 referidos completados → aplicar cupón KLARITO50 (50% descuento)
+- 10+ referidos completados → aplicar cupón KLARITOFREE (100% gratis)
+- Los cupones se aplican a la suscripción Flow del usuario
+
+## 1. Agrega esta función al final de src/lib/referrals.ts:
+
+```typescript
+export async function updateReferralDiscount(referrerUserId: string) {
+  const supabase = await createClient()
+
+  const { data: referrals } = await supabase
+    .from('referrals')
+    .select('id')
+    .eq('referrer_user_id', referrerUserId)
+    .eq('status', 'completed')
+
+  const count = referrals?.length ?? 0
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('flow_subscription_id')
+    .eq('user_id', referrerUserId)
+    .single()
+
+  if (!profile?.flow_subscription_id) return
+
+  const apiKey = process.env.FLOW_API_KEY!
+  const secretKey = process.env.FLOW_SECRET_KEY!
+  const apiUrl = process.env.FLOW_API_URL!
+
+  function flowSign(params: Record<string, string>) {
+    const keys = Object.keys(params).sort()
+    const toSign = keys.map(k => `${k}${params[k]}`).join('')
+    return require('crypto').createHmac('sha256', secretKey).update(toSign).digest('hex')
+  }
+
+  async function flowPost(endpoint: string, params: Record<string, string>) {
+    const allParams: Record<string, string> = { ...params, apiKey }
+    allParams.s = flowSign(allParams)
+    const body = new URLSearchParams(allParams)
+    const res = await fetch(`${apiUrl}${endpoint}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: body.toString(),
+    })
+    return res.json()
+  }
+
+  if (count >= 10) {
+    // Gratis — cancelar suscripción Flow
+    await flowPost('/subscription/cancel', {
+      subscriptionId: profile.flow_subscription_id,
+    })
+    await supabase.from('profiles')
+      .update({ subscription_status: 'active' })
+      .eq('user_id', referrerUserId)
+  } else if (count >= 5) {
+    // 50% descuento
+    await flowPost('/subscription/addCoupon', {
+      subscriptionId: profile.flow_subscription_id,
+      couponId: 'KLARITO50',
+    })
+  }
+}
+```
+
+## 2. En src/app/api/flow/webhook/route.ts en el bloque subscription_charged agrega después de creditReferrer:
+
+```typescript
+// Actualizar descuento del referidor si corresponde
+const { data: referredProfile } = await supabase
+  .from('profiles')
+  .select('referred_by')
+  .eq('user_id', customerId)
+  .single()
+
+if (referredProfile?.referred_by) {
+  const { data: referrerProfile } = await supabase
+    .from('profiles')
+    .select('user_id')
+    .eq('referral_code', referredProfile.referred_by)
+    .single()
+
+  if (referrerProfile) {
+    await updateReferralDiscount(referrerProfile.user_id)
+  }
+}
+```
+
+## 3. Agrega el import en el webhook:
+import { creditReferrer, updateReferralDiscount } from '@/lib/referrals'
+
+## 4. En src/app/(dashboard)/referidos/page.tsx agrega en las tarjetas de resumen una nueva sección que muestre el nivel actual:
+
+Después de las 3 tarjetas agrega:
+
+```tsx
+<Card className="border-zinc-200 shadow-none">
+  <CardContent className="pt-4 pb-4">
+    <div className="flex items-center justify-between">
+      <div>
+        <p className="text-xs text-zinc-400">Tu nivel actual</p>
+        <p className="text-sm font-medium text-zinc-900 mt-1">
+          {completedReferrals >= 10
+            ? '🎉 ¡Servicio gratuito!'
+            : completedReferrals >= 5
+            ? '⭐ 50% de descuento'
+            : `${completedReferrals}/5 para 50% descuento`}
+        </p>
+      </div>
+      <div className="text-right">
+        <p className="text-xs text-zinc-400">Pagas actualmente</p>
+        <p className="text-lg font-semibold tabular-nums text-zinc-900">
+          {completedReferrals >= 10
+            ? '$0'
+            : completedReferrals >= 5
+            ? '$2.585'
+            : '$5.170'}
+        </p>
+      </div>
+    </div>
+    <div className="mt-3 bg-zinc-100 rounded-full h-2">
+      <div
+        className="bg-zinc-900 h-2 rounded-full transition-all"
+        style={{ width: `${Math.min(100, (completedReferrals / 10) * 100)}%` }}
+      />
+    </div>
+    <div className="flex justify-between text-xs text-zinc-400 mt-1">
+      <span>0</span>
+      <span>5 → 50%</span>
+      <span>10 → gratis</span>
+    </div>
+  </CardContent>
+</Card>
+```
+
+## 5. Haz git add ., commit con mensaje "feat: cupones por nivel de referidos" y push.
