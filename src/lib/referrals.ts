@@ -61,3 +61,59 @@ export async function creditReferrer(referredUserId: string) {
       .insert({ user_id: referrerProfile.user_id, total: 500, used: 0 })
   }
 }
+
+export async function updateReferralDiscount(referrerUserId: string) {
+  const supabase = await createClient()
+
+  const { data: referrals } = await supabase
+    .from('referrals')
+    .select('id')
+    .eq('referrer_user_id', referrerUserId)
+    .eq('status', 'completed')
+
+  const count = referrals?.length ?? 0
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('flow_subscription_id')
+    .eq('user_id', referrerUserId)
+    .single()
+
+  if (!profile?.flow_subscription_id) return
+
+  const apiKey = process.env.FLOW_API_KEY!
+  const secretKey = process.env.FLOW_SECRET_KEY!
+  const apiUrl = process.env.FLOW_API_URL!
+
+  function flowSign(params: Record<string, string>) {
+    const keys = Object.keys(params).sort()
+    const toSign = keys.map(k => `${k}${params[k]}`).join('')
+    return require('crypto').createHmac('sha256', secretKey).update(toSign).digest('hex')
+  }
+
+  async function flowPost(endpoint: string, params: Record<string, string>) {
+    const allParams: Record<string, string> = { ...params, apiKey }
+    allParams.s = flowSign(allParams)
+    const body = new URLSearchParams(allParams)
+    const res = await fetch(`${apiUrl}${endpoint}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: body.toString(),
+    })
+    return res.json()
+  }
+
+  if (count >= 10) {
+    await flowPost('/subscription/cancel', {
+      subscriptionId: profile.flow_subscription_id,
+    })
+    await supabase.from('profiles')
+      .update({ subscription_status: 'active' })
+      .eq('user_id', referrerUserId)
+  } else if (count >= 5) {
+    await flowPost('/subscription/addCoupon', {
+      subscriptionId: profile.flow_subscription_id,
+      couponId: 'KLARITO50',
+    })
+  }
+}

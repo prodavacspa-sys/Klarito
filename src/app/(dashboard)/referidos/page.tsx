@@ -97,6 +97,44 @@ export default function ReferidosPage() {
       </div>
 
       <Card className="border-zinc-200 shadow-none">
+        <CardContent className="pt-4 pb-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs text-zinc-400">Tu nivel actual</p>
+              <p className="text-sm font-medium text-zinc-900 mt-1">
+                {completedReferrals >= 10
+                  ? '🎉 ¡Servicio gratuito!'
+                  : completedReferrals >= 5
+                  ? '⭐ 50% de descuento'
+                  : `${completedReferrals}/5 para 50% descuento`}
+              </p>
+            </div>
+            <div className="text-right">
+              <p className="text-xs text-zinc-400">Pagas actualmente</p>
+              <p className="text-lg font-semibold tabular-nums text-zinc-900">
+                {completedReferrals >= 10
+                  ? '$0'
+                  : completedReferrals >= 5
+                  ? '$2.585'
+                  : '$5.170'}
+              </p>
+            </div>
+          </div>
+          <div className="mt-3 bg-zinc-100 rounded-full h-2">
+            <div
+              className="bg-zinc-900 h-2 rounded-full transition-all"
+              style={{ width: `${Math.min(100, (completedReferrals / 10) * 100)}%` }}
+            />
+          </div>
+          <div className="flex justify-between text-xs text-zinc-400 mt-1">
+            <span>0</span>
+            <span>5 → 50%</span>
+            <span>10 → gratis</span>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card className="border-zinc-200 shadow-none">
         <CardHeader className="pb-3">
           <CardTitle className="text-base font-medium flex items-center gap-2">
             <Gift className="h-4 w-4 text-zinc-400" />
