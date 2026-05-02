@@ -102,6 +102,23 @@ export default function PerfilPage() {
               : <Badge variant="outline" className="text-zinc-400 border-zinc-200">Inactivo</Badge>
             }
           </div>
+          {subscriptionStatus !== 'active' && (
+            <Button
+              className="w-full bg-zinc-900 hover:bg-zinc-700 text-white"
+              onClick={async () => {
+                try {
+                  const res = await fetch('/api/flow/subscribe', { method: 'POST' })
+                  const data = await res.json()
+                  if (data.redirectUrl) window.location.href = data.redirectUrl
+                  else toast.error('Error al iniciar suscripción')
+                } catch {
+                  toast.error('Error de conexión')
+                }
+              }}
+            >
+              Activar suscripción — $5.170/mes
+            </Button>
+          )}
         </CardContent>
       </Card>
       <Card className="border-zinc-200 shadow-none">
