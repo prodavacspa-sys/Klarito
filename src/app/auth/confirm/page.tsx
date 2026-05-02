@@ -13,7 +13,7 @@ export default function AuthConfirmPage() {
       if (event === 'PASSWORD_RECOVERY') {
         router.push('/actualizar-password')
       } else if (event === 'SIGNED_IN' && session) {
-        router.push('/dashboard')
+        router.push('/suscripcion/activar')
       }
     })
     return () => subscription.unsubscribe()
