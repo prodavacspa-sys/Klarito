@@ -122,6 +122,7 @@ export default function PerfilPage() {
                   <div className="space-y-4 py-2 text-center">
                     <div className="text-4xl font-bold text-zinc-900">Klarito</div>
                     <p className="text-sm text-zinc-500">Tus finanzas, en orden.</p>
+                    <p className="text-xs text-zinc-400">Servicio desarrollado por <strong className="text-zinc-600">Prodavac SpA</strong></p>
                     <div className="bg-zinc-50 rounded-xl p-4 space-y-2 text-left">
                       <div className="flex justify-between text-sm">
                         <span className="text-zinc-500">Plan mensual</span>
