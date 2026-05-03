@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Badge } from '@/components/ui/badge'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { toast } from 'sonner'
-import { Loader2, User, Building2, CreditCard } from 'lucide-react'
+import { Loader2, User, Building2, CreditCard, Tag } from 'lucide-react'
 
 export default function PerfilPage() {
   const supabase = createClient()
@@ -20,6 +20,9 @@ export default function PerfilPage() {
   const [subscriptionStatus, setSubscriptionStatus] = useState('')
   const [showPaymentModal, setShowPaymentModal] = useState(false)
   const [loadingPayment, setLoadingPayment] = useState(false)
+  const [couponCode, setCouponCode] = useState('')
+  const [applyingCoupon, setApplyingCoupon] = useState(false)
+  const [flowSubscriptionId, setFlowSubscriptionId] = useState('')
 
   useEffect(() => { fetchProfile() }, [])
 
@@ -31,6 +34,7 @@ export default function PerfilPage() {
     if (data) {
       setBusinessName(data.business_name ?? '')
       setSubscriptionStatus(data.subscription_status)
+      setFlowSubscriptionId(data.flow_subscription_id ?? '')
     }
     setLoading(false)
   }
@@ -43,6 +47,29 @@ export default function PerfilPage() {
     if (error) { toast.error('Error al guardar'); setSaving(false); return }
     toast.success('Perfil actualizado')
     setSaving(false)
+  }
+
+  async function handleApplyCoupon() {
+    if (!couponCode.trim()) { toast.error('Ingresa un código de cupón'); return }
+    if (!flowSubscriptionId) { toast.error('Debes tener una suscripción activa'); return }
+    setApplyingCoupon(true)
+    try {
+      const res = await fetch('/api/flow/apply-coupon', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ couponId: couponCode.trim(), subscriptionId: flowSubscriptionId }),
+      })
+      const data = await res.json()
+      if (data.ok) {
+        toast.success('Cupón aplicado correctamente')
+        setCouponCode('')
+      } else {
+        toast.error(data.error ?? 'Cupón inválido')
+      }
+    } catch {
+      toast.error('Error de conexión')
+    }
+    setApplyingCoupon(false)
   }
 
   async function handlePasswordReset() {
@@ -163,6 +190,34 @@ export default function PerfilPage() {
           )}
         </CardContent>
       </Card>
+      {subscriptionStatus === 'active' && (
+        <Card className="border-zinc-200 shadow-none">
+          <CardHeader className="pb-4">
+            <CardTitle className="text-base font-medium flex items-center gap-2">
+              <Tag className="h-4 w-4 text-zinc-400" />
+              Cupón de descuento
+            </CardTitle>
+            <CardDescription>Aplica un código para obtener descuento en tu mensualidad</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="flex gap-2">
+              <Input
+                placeholder="Ej: KLARITO20"
+                value={couponCode}
+                onChange={e => setCouponCode(e.target.value.toUpperCase())}
+                className="border-zinc-200 font-mono"
+              />
+              <Button
+                onClick={handleApplyCoupon}
+                disabled={applyingCoupon}
+                className="bg-zinc-900 hover:bg-zinc-700 text-white flex-shrink-0"
+              >
+                {applyingCoupon ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Aplicar'}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
       <Card className="border-zinc-200 shadow-none">
         <CardHeader className="pb-4">
           <CardTitle className="text-base font-medium flex items-center gap-2">
