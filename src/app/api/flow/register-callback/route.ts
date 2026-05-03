@@ -26,9 +26,9 @@ async function flowPost(endpoint: string, params: Record<string, string>) {
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url)
   const token = searchParams.get('token')
-  const customerId = searchParams.get('customerId')
-  const planId = searchParams.get('planId')
-  const userId = searchParams.get('userId')
+  const customerId = searchParams.get('cid')
+  const planId = searchParams.get('pid')
+  const userId = searchParams.get('uid')
 
   if (!token || !customerId || !planId || !userId) {
     return NextResponse.redirect(`${origin}/perfil?error=missing_params`)
@@ -50,8 +50,8 @@ export async function GET(request: Request) {
         flow_subscription_id: subscription.subscriptionId
       })
       .eq('user_id', userId)
-    return NextResponse.redirect(`${origin}/suscripcion/bienvenida`)
+    return NextResponse.redirect(`${origin}/dashboard`)
   }
 
-  return NextResponse.redirect(`${origin}/suscripcion/resultado?token=error`)
+  return NextResponse.redirect(`${origin}/perfil?error=pago_fallido`)
 }
