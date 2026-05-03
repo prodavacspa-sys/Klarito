@@ -67,6 +67,7 @@ export default function PerfilPage() {
           toast.success('Cupón aplicado correctamente')
         }
         setCouponCode('')
+        setTimeout(() => window.location.reload(), 1500)
       } else {
         toast.error(data.error ?? 'Cupón inválido')
       }
