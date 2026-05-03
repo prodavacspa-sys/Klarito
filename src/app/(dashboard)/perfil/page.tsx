@@ -202,7 +202,7 @@ export default function PerfilPage() {
           <CardContent className="space-y-3">
             <div className="flex gap-2">
               <Input
-                placeholder="Ej: KLARITO20"
+                placeholder="Ej: 6372"
                 value={couponCode}
                 onChange={e => setCouponCode(e.target.value.toUpperCase())}
                 className="border-zinc-200 font-mono"
@@ -215,6 +215,7 @@ export default function PerfilPage() {
                 {applyingCoupon ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Aplicar'}
               </Button>
             </div>
+            <p className="text-xs text-zinc-400">Ingresa el código numérico del cupón</p>
           </CardContent>
         </Card>
       )}
