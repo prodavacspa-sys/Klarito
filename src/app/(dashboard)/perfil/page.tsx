@@ -51,17 +51,21 @@ export default function PerfilPage() {
 
   async function handleApplyCoupon() {
     if (!couponCode.trim()) { toast.error('Ingresa un código de cupón'); return }
-    if (!flowSubscriptionId) { toast.error('Debes tener una suscripción activa'); return }
     setApplyingCoupon(true)
     try {
       const res = await fetch('/api/flow/apply-coupon', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ couponId: couponCode.trim(), subscriptionId: flowSubscriptionId }),
+        body: JSON.stringify({ couponId: couponCode.trim() }),
       })
       const data = await res.json()
       if (data.ok) {
-        toast.success('Cupón aplicado correctamente')
+        if (data.free) {
+          toast.success('¡Plan activado gratuitamente!')
+          setSubscriptionStatus('active')
+        } else {
+          toast.success('Cupón aplicado correctamente')
+        }
         setCouponCode('')
       } else {
         toast.error(data.error ?? 'Cupón inválido')
