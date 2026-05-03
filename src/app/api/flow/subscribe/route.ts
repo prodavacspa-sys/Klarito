@@ -42,54 +42,57 @@ export async function POST() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
 
-  const { data: profile } = await supabase
+  // Obtener perfil — fallback a datos del auth si no existe
+  const { data: profile, error: profileError } = await supabase
     .from('profiles')
     .select('email, business_name')
     .eq('user_id', user.id)
     .single()
 
+  console.log('profile:', JSON.stringify(profile), 'profileError:', profileError?.message)
+
   const email = profile?.email ?? user.email!
-  const name = profile?.business_name ?? 'Usuario'
+  const name = profile?.business_name ?? user.email ?? 'Usuario'
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL!
   const planId = process.env.FLOW_PLAN_ID!
 
+  console.log('email:', email, 'name:', name, 'siteUrl:', siteUrl, 'planId:', planId)
+
   let customerId: string
 
+  // Intentar crear cliente
   const newCustomer = await flowPost('/customer/create', {
     name,
     email,
     externalId: user.id,
   })
 
+  console.log('customer/create:', JSON.stringify(newCustomer))
+
   if (newCustomer.customerId) {
     customerId = newCustomer.customerId
   } else {
-    // Buscar cliente existente por externalId via GET
-    const existing = await flowGet('/customer/getByExternalId', {
-      externalId: user.id,
+    // Buscar por email en customer/list
+    const list = await flowGet('/customer/list', {
+      filter: email,
+      start: '0',
+      limit: '5',
     })
 
-    if (existing.customerId) {
-      customerId = existing.customerId
+    console.log('customer/list:', JSON.stringify(list))
+
+    const customers = list.data ?? []
+    if (customers.length > 0) {
+      customerId = customers[0].customerId
     } else {
-      // Último recurso: buscar por email
-      const list = await flowGet('/customer/list', {
-        filter: email,
-        start: '0',
-        limit: '5',
-      })
-      const customers = list.data ?? []
-      if (customers.length > 0) {
-        customerId = customers[0].customerId
-      } else {
-        return NextResponse.json({ error: 'No se pudo obtener cliente Flow', detail: { newCustomer, existing, list } }, { status: 400 })
-      }
+      return NextResponse.json({
+        error: 'No se pudo obtener cliente Flow',
+        detail: { newCustomer, list },
+      }, { status: 400 })
     }
   }
 
-  const returnUrl = `${siteUrl}/api/flow/register-callback`
-  const fullReturnUrl = `${returnUrl}?cid=${customerId}&pid=${planId}&uid=${user.id}`
-
+  const fullReturnUrl = `${siteUrl}/api/flow/register-callback?cid=${customerId}&pid=${planId}&uid=${user.id}`
   console.log('fullReturnUrl:', fullReturnUrl)
 
   const register = await flowPost('/customer/register', {
