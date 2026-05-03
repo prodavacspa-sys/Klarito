@@ -87,13 +87,17 @@ export async function POST() {
     }
   }
 
-  // Paso 2: registrar tarjeta y suscribir via URL de pago
-  console.log('siteUrl:', siteUrl)
-  console.log('url_return:', `${siteUrl}/api/flow/register-callback?customerId=${customerId}&planId=${planId}&userId=${user.id}`)
+  const returnUrl = `${siteUrl}/api/flow/register-callback`
+  const fullReturnUrl = `${returnUrl}?cid=${customerId}&pid=${planId}&uid=${user.id}`
+
+  console.log('fullReturnUrl:', fullReturnUrl)
+
   const register = await flowPost('/customer/register', {
     customerId,
-    url_return: `${siteUrl}/api/flow/register-callback?customerId=${customerId}&planId=${planId}&userId=${user.id}`,
+    url_return: fullReturnUrl,
   })
+
+  console.log('register response:', JSON.stringify(register))
 
   if (register.url && register.token) {
     return NextResponse.json({ redirectUrl: `${register.url}?token=${register.token}` })
