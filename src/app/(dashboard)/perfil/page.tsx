@@ -190,14 +190,13 @@ export default function PerfilPage() {
           )}
         </CardContent>
       </Card>
-      {subscriptionStatus === 'active' && (
-        <Card className="border-zinc-200 shadow-none">
+      <Card className="border-zinc-200 shadow-none">
           <CardHeader className="pb-4">
             <CardTitle className="text-base font-medium flex items-center gap-2">
               <Tag className="h-4 w-4 text-zinc-400" />
               Cupón de descuento
             </CardTitle>
-            <CardDescription>Aplica un código para obtener descuento en tu mensualidad</CardDescription>
+            <CardDescription>Ingresa un código para obtener descuento o activar tu plan gratuitamente</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="flex gap-2">
@@ -217,8 +216,7 @@ export default function PerfilPage() {
             </div>
             <p className="text-xs text-zinc-400">Ingresa el código numérico del cupón</p>
           </CardContent>
-        </Card>
-      )}
+      </Card>
       <Card className="border-zinc-200 shadow-none">
         <CardHeader className="pb-4">
           <CardTitle className="text-base font-medium flex items-center gap-2">
