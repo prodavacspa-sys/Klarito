@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { toast } from 'sonner'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Search, Plus, Minus, Trash2, ShoppingCart, CreditCard, Banknote, ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 
@@ -24,8 +25,18 @@ export default function NuevaVentaPage() {
   const [cart, setCart] = useState<CartItem[]>([])
   const [payMethod, setPayMethod] = useState<'efectivo' | 'tarjeta'>('efectivo')
   const [saving, setSaving] = useState(false)
+  const [subscriptionStatus, setSubscriptionStatus] = useState('')
+  const [upgradeOpen, setUpgradeOpen] = useState(false)
+  const [loadingPayment, setLoadingPayment] = useState(false)
 
-  useEffect(() => { fetchProducts() }, [])
+  useEffect(() => { fetchProducts(); fetchSubscription() }, [])
+
+  async function fetchSubscription() {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+    const { data } = await supabase.from('profiles').select('subscription_status').eq('user_id', user.id).single()
+    if (data) setSubscriptionStatus(data.subscription_status)
+  }
 
   async function fetchProducts() {
     const { data } = await supabase
@@ -71,6 +82,10 @@ export default function NuevaVentaPage() {
   const ivaAmount = subtotal - netAmount
 
   async function handleConfirm() {
+    if (subscriptionStatus !== 'active') {
+      setUpgradeOpen(true)
+      return
+    }
     if (cart.length === 0) { toast.error('El carrito está vacío'); return }
     setSaving(true)
 
@@ -254,6 +269,51 @@ export default function NuevaVentaPage() {
           </div>
         </div>
       </div>
+      <Dialog open={upgradeOpen} onOpenChange={setUpgradeOpen}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="text-center">Activar suscripción Klarito</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2 text-center">
+            <div className="text-4xl font-bold text-zinc-900">Klarito</div>
+            <p className="text-sm text-zinc-500">Tus finanzas, en orden.</p>
+            <p className="text-xs text-zinc-400">Servicio desarrollado por <strong className="text-zinc-600">Prodavac SpA</strong></p>
+            <div className="bg-zinc-50 rounded-xl p-4 space-y-2 text-left">
+              <div className="flex justify-between text-sm">
+                <span className="text-zinc-500">Plan mensual</span>
+                <span className="font-medium tabular-nums">$5.170/mes</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-zinc-500">Período de prueba</span>
+                <span className="font-medium text-emerald-600">7 días gratis</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-zinc-500">IVA incluido</span>
+                <span className="font-medium">✓</span>
+              </div>
+            </div>
+            <p className="text-xs text-zinc-400">Serás redirigido a nuestra plataforma de pago segura para registrar tu tarjeta. No se realizará ningún cobro durante los primeros 7 días.</p>
+            <Button
+              className="w-full bg-zinc-900 hover:bg-zinc-700 text-white"
+              disabled={loadingPayment}
+              onClick={async () => {
+                setLoadingPayment(true)
+                try {
+                  const res = await fetch('/api/flow/subscribe', { method: 'POST' })
+                  const data = await res.json()
+                  if (data.redirectUrl) window.location.href = data.redirectUrl
+                  else toast.error('Error al iniciar suscripción')
+                } catch {
+                  toast.error('Error de conexión')
+                }
+                setLoadingPayment(false)
+              }}
+            >
+              {loadingPayment ? 'Conectando...' : 'Continuar al pago seguro →'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
