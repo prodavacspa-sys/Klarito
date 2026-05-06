@@ -281,11 +281,11 @@ export default function InventarioPage() {
           </Table>
         )}
       </div>
-    </div>
       <UpgradeModal
         open={upgradeModal.open}
         onClose={() => setUpgradeModal(u => ({ ...u, open: false }))}
         reason={upgradeModal.reason}
       />
+    </div>
   )
 }
