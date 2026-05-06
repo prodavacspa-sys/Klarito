@@ -21,6 +21,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { toast } from 'sonner'
+import { UpgradeModal } from '@/components/app/upgrade-modal'
 import { Plus, Pencil, Trash2, Download, AlertTriangle } from 'lucide-react'
 
 type Product = {
@@ -51,6 +52,8 @@ export default function InventarioPage() {
   const [editing, setEditing] = useState<Product | null>(null)
   const [form, setForm] = useState(emptyForm)
   const [saving, setSaving] = useState(false)
+  const [subscriptionStatus, setSubscriptionStatus] = useState<string>('inactive')
+  const [upgradeModal, setUpgradeModal] = useState<{ open: boolean; reason: 'productos' | 'limite_productos' }>({ open: false, reason: 'productos' })
 
   useEffect(() => { fetchProducts() }, [])
 
@@ -62,6 +65,9 @@ export default function InventarioPage() {
       .eq('is_active', true)
       .order('name')
     setProducts(data ?? [])
+    const { data: { user } } = await supabase.auth.getUser()
+    const { data: profile } = await supabase.from('profiles').select('subscription_status').eq('user_id', user!.id).single()
+    setSubscriptionStatus(profile?.subscription_status ?? 'inactive')
     setLoading(false)
   }
 
@@ -84,6 +90,15 @@ export default function InventarioPage() {
   }
 
   function openNew() {
+    const isActive = subscriptionStatus === 'active'
+    if (!isActive && products.length >= 1) {
+      setUpgradeModal({ open: true, reason: 'productos' })
+      return
+    }
+    if (isActive && products.length >= 100) {
+      setUpgradeModal({ open: true, reason: 'limite_productos' })
+      return
+    }
     setEditing(null)
     setForm(emptyForm)
     setOpen(true)
@@ -267,5 +282,10 @@ export default function InventarioPage() {
         )}
       </div>
     </div>
+      <UpgradeModal
+        open={upgradeModal.open}
+        onClose={() => setUpgradeModal(u => ({ ...u, open: false }))}
+        reason={upgradeModal.reason}
+      />
   )
 }
