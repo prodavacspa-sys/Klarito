@@ -82,12 +82,21 @@ export async function POST(request: Request) {
   })
 
   if (subscription.subscriptionId) {
-    await supabase.from('profiles')
+    const { error: updateError } = await supabase.from('profiles')
       .update({
         subscription_status: 'active',
         flow_subscription_id: subscription.subscriptionId
       })
       .eq('user_id', user.id)
+
+    console.log('update error:', updateError)
+    console.log('user.id:', user.id)
+    console.log('subscriptionId:', subscription.subscriptionId)
+
+    if (updateError) {
+      return NextResponse.json({ error: 'Suscripción creada en Flow pero error al actualizar perfil: ' + updateError.message }, { status: 500 })
+    }
+
     return NextResponse.json({ ok: true, free: true })
   }
 
