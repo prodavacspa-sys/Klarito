@@ -53,7 +53,7 @@ export async function POST() {
 
   const { data: profile, error: profileError } = await supabase
     .from('profiles')
-    .select('email, business_name, flow_subscription_id, subscription_status')
+    .select('email, business_name, flow_subscription_id, subscription_status, flow_customer_id')
     .eq('user_id', user.id)
     .single()
   console.log('profile:', JSON.stringify(profile))
@@ -72,33 +72,19 @@ export async function POST() {
   let customerId: string
   let customerData: any = null
 
-  console.log('Llamando customer/create...')
-  const newCustomer = await flowPost('/customer/create', {
-    name, email, externalId: user.id,
-  })
-
-  console.log('customer/create result:', JSON.stringify(newCustomer))
-
-  if (newCustomer.customerId) {
-    customerId = newCustomer.customerId
+  if (profile?.flow_customer_id) {
+    customerId = profile.flow_customer_id
   } else {
-    // cliente ya existe — buscar por email en customer/list
-    const list = await flowGet('/customer/list', {
-      filter: email,
-      start: '0',
-      limit: '10',
-    })
-
-    console.log('customer/list result:', JSON.stringify(list))
-    const customers = list.data ?? []
-    const match = customers.find((c: any) => c.externalId === user.id)
-
-    if (match?.customerId) {
-      customerId = match.customerId
-    } else if (customers.length > 0) {
-      customerId = customers[0].customerId
+    // crear cliente en Flow
+    console.log('Llamando customer/create...')
+    const newCustomer = await flowPost('/customer/create', { name, email, externalId: user.id })
+    console.log('customer/create result:', JSON.stringify(newCustomer))
+    if (newCustomer.customerId) {
+      customerId = newCustomer.customerId
+      // guardar en Supabase
+      await supabase.from('profiles').update({ flow_customer_id: customerId }).eq('user_id', user.id)
     } else {
-      return NextResponse.json({ error: 'Cliente no encontrado en Flow' }, { status: 400 })
+      return NextResponse.json({ error: 'No se pudo crear cliente en Flow' }, { status: 400 })
     }
   }
 
