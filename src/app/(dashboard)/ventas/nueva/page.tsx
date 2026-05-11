@@ -281,11 +281,11 @@ export default function NuevaVentaPage() {
             <div className="bg-zinc-50 rounded-xl p-4 space-y-2 text-left">
               <div className="flex justify-between text-sm">
                 <span className="text-zinc-500">Plan mensual neto</span>
-                <span className="font-medium tabular-nums">$4.345</span>
+                <span className="font-medium tabular-nums">$5.000</span>
               </div>
               <div className="flex justify-between text-sm">
-                <span className="text-zinc-500">IVA (19%)</span>
-                <span className="font-medium tabular-nums">$825</span>
+                <span className="text-zinc-500">IVA</span>
+                <span className="font-medium tabular-nums">$170</span>
               </div>
               <div className="flex justify-between text-sm font-semibold border-t border-zinc-200 pt-2">
                 <span className="text-zinc-900">Total mensual</span>
