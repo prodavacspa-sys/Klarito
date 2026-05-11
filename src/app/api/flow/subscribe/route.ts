@@ -39,15 +39,20 @@ async function flowGet(endpoint: string, params: Record<string, string>) {
 export async function POST() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
+  console.log('=== SUBSCRIBE START ===')
+  console.log('user.id:', user?.id)
+  console.log('user.email:', user?.email)
   if (!user) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
 
   const { planId, siteUrl } = getEnv()
 
-  const { data: profile } = await supabase
+  const { data: profile, error: profileError } = await supabase
     .from('profiles')
     .select('email, business_name, flow_subscription_id, subscription_status')
     .eq('user_id', user.id)
     .single()
+  console.log('profile:', JSON.stringify(profile))
+  console.log('profileError:', profileError?.message)
 
   // Si ya tiene suscripción activa en Supabase
   if (profile?.subscription_status === 'active' && profile?.flow_subscription_id) {
@@ -62,6 +67,7 @@ export async function POST() {
   let customerId: string
   let customerData: any = null
 
+  console.log('Llamando customer/create...')
   const newCustomer = await flowPost('/customer/create', {
     name, email, externalId: user.id,
   })
@@ -72,6 +78,7 @@ export async function POST() {
     customerId = newCustomer.customerId
   } else {
     // Cliente ya existe — buscar por externalId
+    console.log('Llamando customer/getByExternalId...')
     const existing = await flowGet('/customer/getByExternalId', { externalId: user.id })
     console.log('getByExternalId result:', JSON.stringify(existing))
     if (existing.customerId) {
