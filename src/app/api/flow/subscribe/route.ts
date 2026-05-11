@@ -82,15 +82,22 @@ export async function POST() {
   if (newCustomer.customerId) {
     customerId = newCustomer.customerId
   } else {
-    // Cliente ya existe — buscar por externalId
-    console.log('Llamando customer/getByExternalId...')
-    const existing = await flowGet('/customer/getByExternalId', { externalId: user.id })
-    console.log('getByExternalId result:', JSON.stringify(existing))
-    if (existing.customerId) {
-      customerId = existing.customerId
-      customerData = existing
+    // cliente ya existe — buscar por email en customer/list
+    const list = await flowGet('/customer/list', {
+      filter: email,
+      start: '0',
+      limit: '10',
+    })
+
+    const customers = list.data ?? []
+    const match = customers.find((c: any) => c.externalId === user.id)
+
+    if (match?.customerId) {
+      customerId = match.customerId
+    } else if (customers.length > 0) {
+      customerId = customers[0].customerId
     } else {
-      return NextResponse.json({ error: 'No se pudo crear el cliente en Flow' }, { status: 400 })
+      return NextResponse.json({ error: 'Cliente no encontrado en Flow' }, { status: 400 })
     }
   }
 
