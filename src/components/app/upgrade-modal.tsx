@@ -9,7 +9,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { useRouter } from 'next/navigation'
 
-type Reason = 'productos' | 'limite_productos'
+type Reason = 'productos' | 'limite_productos' | 'gastos' | 'recetas'
 
 interface Props {
   open: boolean
@@ -26,6 +26,14 @@ const MESSAGES: Record<Reason, { title: string; description: string }> = {
     title: 'Límite de productos alcanzado',
     description: 'Has alcanzado el límite de 100 productos. Contacta a soporte si necesitas más.',
   },
+  gastos: {
+    title: 'Límite del plan gratuito',
+    description: 'El plan gratuito permite 1 gasto. Activa tu suscripción para registrar gastos ilimitados.',
+  },
+  recetas: {
+    title: 'Límite del plan gratuito',
+    description: 'El plan gratuito permite 1 receta. Activa tu suscripción para crear recetas ilimitadas.',
+  },
 }
 
 export function UpgradeModal({ open, onClose, reason }: Props) {
@@ -39,7 +47,7 @@ export function UpgradeModal({ open, onClose, reason }: Props) {
           <DialogTitle>{title}</DialogTitle>
         </DialogHeader>
         <p className="text-sm text-zinc-500">{description}</p>
-        {reason === 'productos' && (
+        {(reason === 'productos' || reason === 'gastos' || reason === 'recetas') && (
           <div className="flex gap-2 pt-2">
             <Button
               className="flex-1 bg-zinc-900 hover:bg-zinc-700 text-white"
