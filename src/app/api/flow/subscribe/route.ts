@@ -71,6 +71,7 @@ export async function POST() {
   } else {
     // Cliente ya existe — buscar por externalId
     const existing = await flowGet('/customer/getByExternalId', { externalId: user.id })
+    console.log('getByExternalId result:', JSON.stringify(existing))
     if (existing.customerId) {
       customerId = existing.customerId
       customerData = existing
