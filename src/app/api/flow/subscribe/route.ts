@@ -89,6 +89,7 @@ export async function POST() {
       limit: '10',
     })
 
+    console.log('customer/list result:', JSON.stringify(list))
     const customers = list.data ?? []
     const match = customers.find((c: any) => c.externalId === user.id)
 
