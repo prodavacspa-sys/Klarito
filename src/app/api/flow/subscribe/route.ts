@@ -37,6 +37,11 @@ async function flowGet(endpoint: string, params: Record<string, string>) {
 }
 
 export async function POST() {
+  console.log('ENV CHECK - FLOW_API_KEY length:', process.env.FLOW_API_KEY?.length ?? 'UNDEFINED')
+  console.log('ENV CHECK - FLOW_SECRET_KEY length:', process.env.FLOW_SECRET_KEY?.length ?? 'UNDEFINED')
+  console.log('ENV CHECK - FLOW_API_URL:', process.env.FLOW_API_URL)
+  console.log('ENV CHECK - FLOW_PLAN_ID:', process.env.FLOW_PLAN_ID)
+
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   console.log('=== SUBSCRIBE START ===')
