@@ -159,16 +159,20 @@ export default function PerfilPage() {
                     <p className="text-xs text-zinc-400">Servicio desarrollado por <strong className="text-zinc-600">Prodavac SpA</strong></p>
                     <div className="bg-zinc-50 rounded-xl p-4 space-y-2 text-left">
                       <div className="flex justify-between text-sm">
-                        <span className="text-zinc-500">Plan mensual</span>
-                        <span className="font-medium tabular-nums">$5.170/mes</span>
+                        <span className="text-zinc-500">Plan mensual neto</span>
+                        <span className="font-medium tabular-nums">$4.345</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-zinc-500">IVA (19%)</span>
+                        <span className="font-medium tabular-nums">$825</span>
+                      </div>
+                      <div className="flex justify-between text-sm font-semibold border-t border-zinc-200 pt-2">
+                        <span className="text-zinc-900">Total mensual</span>
+                        <span className="tabular-nums">$5.170</span>
                       </div>
                       <div className="flex justify-between text-sm">
                         <span className="text-zinc-500">Período de prueba</span>
                         <span className="font-medium text-emerald-600">7 días gratis</span>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span className="text-zinc-500">IVA incluido</span>
-                        <span className="font-medium">✓</span>
                       </div>
                     </div>
                     <p className="text-xs text-zinc-400">Serás redirigido a nuestra plataforma de pago segura para registrar tu tarjeta. No se realizará ningún cobro durante los primeros 7 días.</p>
