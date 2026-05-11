@@ -54,20 +54,27 @@ export default function InventarioPage() {
   const [saving, setSaving] = useState(false)
   const [subscriptionStatus, setSubscriptionStatus] = useState<string>('inactive')
   const [upgradeModal, setUpgradeModal] = useState<{ open: boolean; reason: 'productos' | 'limite_productos' }>({ open: false, reason: 'productos' })
+  const [sortBy, setSortBy] = useState<'name' | 'created_at'>('name')
+  const [sortAsc, setSortAsc] = useState(true)
+  const [pageSize, setPageSize] = useState(20)
+  const [currentPage, setCurrentPage] = useState(1)
 
-  useEffect(() => { fetchProducts() }, [])
+  useEffect(() => { fetchProducts() }, [sortBy, sortAsc, pageSize, currentPage])
 
   async function fetchProducts() {
     setLoading(true)
-    const { data } = await supabase
-      .from('products')
-      .select('*')
-      .eq('is_active', true)
-      .order('name')
-    setProducts(data ?? [])
     const { data: { user } } = await supabase.auth.getUser()
-    const { data: profile } = await supabase.from('profiles').select('subscription_status').eq('user_id', user!.id).single()
-    setSubscriptionStatus(profile?.subscription_status ?? 'inactive')
+    if (user) {
+      const { data: profile } = await supabase.from('profiles').select('subscription_status').eq('user_id', user.id).single()
+      setSubscriptionStatus(profile?.subscription_status ?? 'inactive')
+    }
+    const { data, count } = await supabase
+      .from('products')
+      .select('*', { count: 'exact' })
+      .eq('is_active', true)
+      .order(sortBy, { ascending: sortAsc })
+      .range((currentPage - 1) * pageSize, currentPage * pageSize - 1)
+    setProducts(data ?? [])
     setLoading(false)
   }
 
@@ -241,6 +248,26 @@ export default function InventarioPage() {
             <p className="text-zinc-400 text-sm mt-1">Crea tu primer producto con el botón de arriba.</p>
           </div>
         ) : (
+          <>
+          <div className="flex items-center justify-between px-4 py-2 bg-zinc-50 border-b border-zinc-100">
+            <div className="flex items-center gap-2">
+              <select value={sortBy} onChange={e => { setSortBy(e.target.value as any); setCurrentPage(1) }} className="text-xs border border-zinc-200 rounded px-2 py-1 bg-white">
+                <option value="name">Nombre A-Z</option>
+                <option value="created_at">Fecha</option>
+              </select>
+              <button onClick={() => setSortAsc(!sortAsc)} className="text-xs text-zinc-500 hover:text-zinc-900">
+                {sortAsc ? '↑' : '↓'}
+              </button>
+            </div>
+            <div className="flex items-center gap-2">
+              <select value={pageSize} onChange={e => { setPageSize(Number(e.target.value)); setCurrentPage(1) }} className="text-xs border border-zinc-200 rounded px-2 py-1 bg-white">
+                <option value={20}>20</option>
+                <option value={50}>50</option>
+                <option value={100}>100</option>
+              </select>
+              <span className="text-xs text-zinc-400">por página</span>
+            </div>
+          </div>
           <Table>
             <TableHeader>
               <TableRow className="border-zinc-100">
@@ -279,6 +306,14 @@ export default function InventarioPage() {
               ))}
             </TableBody>
           </Table>
+          <div className="flex items-center justify-between px-4 py-2 border-t border-zinc-100">
+            <span className="text-xs text-zinc-400">Página {currentPage}</span>
+            <div className="flex gap-1">
+              <Button variant="outline" size="sm" disabled={currentPage <= 1} onClick={() => setCurrentPage(p => p - 1)} className="h-7 text-xs border-zinc-200">Anterior</Button>
+              <Button variant="outline" size="sm" onClick={() => setCurrentPage(p => p + 1)} className="h-7 text-xs border-zinc-200">Siguiente</Button>
+            </div>
+          </div>
+          </>
         )}
       </div>
       <UpgradeModal

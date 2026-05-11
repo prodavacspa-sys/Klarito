@@ -18,7 +18,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: { 
     supabase.from('expenses').select('net_amount, iva_amount, total_amount, expense_category, document_type, created_at').eq('user_id', user!.id).gte('created_at', firstDay).lte('created_at', lastDay),
   ])
 
-  const { data: profile } = await supabase.from('profiles').select('business_name').eq('user_id', user!.id).single()
+  const { data: profile } = await supabase.from('profiles').select('business_name, ppm_rate').eq('user_id', user!.id).single()
 
   const ventasNetas = sales?.reduce((s, v) => s + v.net_amount, 0) ?? 0
   const ivaDebito = sales?.reduce((s, v) => s + v.iva_amount, 0) ?? 0
@@ -56,6 +56,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: { 
       selectedMonth={selectedMonth}
       totalTransacciones={totalTransacciones}
       totalVentasBrutas={totalVentasBrutas}
+      ppmRate={profile?.ppm_rate ?? 0}
     />
   )
 }

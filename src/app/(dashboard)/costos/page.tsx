@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { toast } from 'sonner'
 import { Plus, Pencil, Trash2, Download, ChefHat, ArrowRight, Info } from 'lucide-react'
+import { UpgradeModal } from '@/components/app/upgrade-modal'
 
 type Product = { id: string; name: string }
 
@@ -56,6 +57,8 @@ export default function CostosPage() {
   const [items, setItems] = useState<RecipeItem[]>([emptyItem()])
   const [form, setForm] = useState({ name: '', description: '', product_id: '', monthly_units: '100' })
   const [saving, setSaving] = useState(false)
+  const [subscriptionStatus, setSubscriptionStatus] = useState<string>('inactive')
+  const [upgradeOpen, setUpgradeOpen] = useState(false)
 
   useEffect(() => { fetchAll() }, [])
 
@@ -69,6 +72,11 @@ export default function CostosPage() {
     setRecipes(r ?? [])
     setSummaries(s ?? [])
     setProducts(p ?? [])
+    const { data: { user } } = await supabase.auth.getUser()
+    if (user) {
+      const { data: profile } = await supabase.from('profiles').select('subscription_status').eq('user_id', user.id).single()
+      setSubscriptionStatus(profile?.subscription_status ?? 'inactive')
+    }
     setLoading(false)
   }
 
@@ -77,6 +85,10 @@ export default function CostosPage() {
   }
 
   function openNew() {
+    if (subscriptionStatus !== 'active' && recipes.length >= 1) {
+      setUpgradeOpen(true)
+      return
+    }
     setEditing(null)
     setForm({ name: '', description: '', product_id: '', monthly_units: '100' })
     setItems([emptyItem()])
@@ -374,6 +386,7 @@ export default function CostosPage() {
           })}
         </div>
       )}
+      <UpgradeModal open={upgradeOpen} onClose={() => setUpgradeOpen(false)} reason="recetas" />
     </div>
   )
 }

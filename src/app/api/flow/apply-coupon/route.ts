@@ -56,14 +56,16 @@ export async function POST(request: Request) {
 
   // Sin suscripción: crear cliente y suscribir con cupón
   let customerId: string
+
+  // Intentar crear cliente
   const newCustomer = await flowPost('/customer/create', {
     name, email, externalId: user.id,
   })
 
   if (newCustomer.customerId) {
     customerId = newCustomer.customerId
-  } else if (newCustomer.error?.code === 501) {
-    // Cliente ya existe - buscar por externalId
+  } else {
+    // Cliente ya existe o error — buscar por externalId via GET
     const apiKey = process.env.FLOW_API_KEY!
     const secretKey = process.env.FLOW_SECRET_KEY!
     const apiUrl = process.env.FLOW_API_URL!
@@ -73,16 +75,32 @@ export async function POST(request: Request) {
     const toSign = keys.map(k => `${k}${getParams[k]}`).join('')
     getParams.s = createHmac('sha256', secretKey).update(toSign).digest('hex')
     const qs = new URLSearchParams(getParams).toString()
+
     const getRes = await fetch(`${apiUrl}/customer/getByExternalId?${qs}`)
     const existing = await getRes.json()
 
     if (existing.customerId) {
       customerId = existing.customerId
     } else {
-      return NextResponse.json({ error: 'No se pudo obtener el cliente de Flow' }, { status: 400 })
+      // Último intento: buscar por email
+      const listParams: Record<string, string> = { apiKey, filter: email, start: '0', limit: '5' }
+      const listKeys = Object.keys(listParams).sort()
+      const listToSign = listKeys.map(k => `${k}${listParams[k]}`).join('')
+      listParams.s = createHmac('sha256', secretKey).update(listToSign).digest('hex')
+      const listQs = new URLSearchParams(listParams).toString()
+
+      const listRes = await fetch(`${apiUrl}/customer/list?${listQs}`)
+      const listData = await listRes.json()
+
+      if (listData.data?.[0]?.customerId) {
+        customerId = listData.data[0].customerId
+      } else {
+        return NextResponse.json({
+          error: 'No se pudo obtener el cliente',
+          debug: { newCustomer, existing, listData }
+        }, { status: 400 })
+      }
     }
-  } else {
-    return NextResponse.json({ error: newCustomer.message ?? 'Error al crear cliente' }, { status: 400 })
   }
 
   // Crear suscripción con cupón

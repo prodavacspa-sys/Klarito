@@ -12,6 +12,7 @@ import { toast } from 'sonner'
 import { Plus, Trash2, Download, Receipt, TrendingDown } from 'lucide-react'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
+import { UpgradeModal } from '@/components/app/upgrade-modal'
 
 type Expense = {
   id: string
@@ -41,6 +42,8 @@ export default function GastosPage() {
   const [open, setOpen] = useState(false)
   const [form, setForm] = useState(emptyForm)
   const [saving, setSaving] = useState(false)
+  const [subscriptionStatus, setSubscriptionStatus] = useState<string>('inactive')
+  const [upgradeOpen, setUpgradeOpen] = useState(false)
 
   useEffect(() => { fetchExpenses() }, [])
 
@@ -52,6 +55,11 @@ export default function GastosPage() {
       .order('created_at', { ascending: false })
       .limit(100)
     setExpenses(data ?? [])
+    const { data: { user } } = await supabase.auth.getUser()
+    if (user) {
+      const { data: profile } = await supabase.from('profiles').select('subscription_status').eq('user_id', user.id).single()
+      setSubscriptionStatus(profile?.subscription_status ?? 'inactive')
+    }
     setLoading(false)
   }
 
@@ -126,7 +134,12 @@ export default function GastosPage() {
           </Button>
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-              <Button size="sm" className="bg-zinc-900 hover:bg-zinc-700 text-white">
+              <Button size="sm" className="bg-zinc-900 hover:bg-zinc-700 text-white" onClick={(e) => {
+                  if (subscriptionStatus !== 'active' && expenses.length >= 1) {
+                    e.preventDefault()
+                    setUpgradeOpen(true)
+                  }
+                }}>
                 <Plus className="h-4 w-4 mr-2" />
                 Nuevo gasto
               </Button>
@@ -293,6 +306,7 @@ export default function GastosPage() {
           </div>
         )}
       </div>
+      <UpgradeModal open={upgradeOpen} onClose={() => setUpgradeOpen(false)} reason="gastos" />
     </div>
   )
 }

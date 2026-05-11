@@ -15,9 +15,10 @@ interface Props {
   selectedMonth: string
   totalTransacciones: number
   totalVentasBrutas: number
+  ppmRate?: number
 }
 
-export function DashboardClient({ businessName, ventasNetas, ivaDebito, ivaCredito, gastosFijos, gastosVariables, chartData, month, selectedMonth, totalTransacciones, totalVentasBrutas }: Props) {
+export function DashboardClient({ businessName, ventasNetas, ivaDebito, ivaCredito, gastosFijos, gastosVariables, chartData, month, selectedMonth, totalTransacciones, totalVentasBrutas, ppmRate }: Props) {
   const fmt = (n: number) => new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 }).format(n)
 
   const utilidadBruta = ventasNetas - gastosVariables
@@ -180,6 +181,26 @@ export function DashboardClient({ businessName, ventasNetas, ivaDebito, ivaCredi
             <p className="text-xs text-zinc-400">Resultado estimado</p>
             <p className={`text-xl font-semibold tabular-nums mt-1 ${ivaResultado > 0 ? 'text-rose-500' : 'text-emerald-600'}`}>{fmt(Math.abs(ivaResultado))}</p>
             <p className="text-xs text-zinc-400 mt-0.5">{ivaResultado > 0 ? 'a pagar al SII' : 'remanente a favor'}</p>
+          </div>
+        </div>
+      </div>
+
+      {/* PPM */}
+      <div className="bg-white border border-zinc-200 rounded-xl p-5">
+        <div className="flex items-center gap-2 mb-4">
+          <FileText className="h-4 w-4 text-zinc-400" />
+          <p className="text-sm font-medium text-zinc-900">Pago Provisional Mensual (PPM)</p>
+          <span className="text-xs text-zinc-400 ml-1">estimación referencial</span>
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <div className="bg-zinc-50 rounded-lg p-4">
+            <p className="text-xs text-zinc-400">Base imponible (ventas netas)</p>
+            <p className="text-xl font-semibold tabular-nums text-zinc-900 mt-1">{fmt(ventasNetas)}</p>
+          </div>
+          <div className="bg-amber-50 rounded-lg p-4 border border-amber-100">
+            <p className="text-xs text-zinc-400">PPM estimado ({ppmRate ?? 0}%)</p>
+            <p className="text-xl font-semibold tabular-nums text-amber-600 mt-1">{fmt(Math.round(ventasNetas * ((ppmRate ?? 0) / 100)))}</p>
+            <p className="text-xs text-zinc-400 mt-0.5">configura tu tasa en Perfil</p>
           </div>
         </div>
       </div>

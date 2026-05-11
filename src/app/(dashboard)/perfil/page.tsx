@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Badge } from '@/components/ui/badge'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { toast } from 'sonner'
-import { Loader2, User, Building2, CreditCard, Tag } from 'lucide-react'
+import { Loader2, User, Building2, CreditCard, Tag, FileText } from 'lucide-react'
 
 export default function PerfilPage() {
   const supabase = createClient()
@@ -23,6 +23,7 @@ export default function PerfilPage() {
   const [couponCode, setCouponCode] = useState('')
   const [applyingCoupon, setApplyingCoupon] = useState(false)
   const [flowSubscriptionId, setFlowSubscriptionId] = useState('')
+  const [ppmRate, setPpmRate] = useState('0')
 
   useEffect(() => { fetchProfile() }, [])
 
@@ -35,6 +36,7 @@ export default function PerfilPage() {
       setBusinessName(data.business_name ?? '')
       setSubscriptionStatus(data.subscription_status)
       setFlowSubscriptionId(data.flow_subscription_id ?? '')
+      setPpmRate(String(data.ppm_rate ?? 0))
     }
     setLoading(false)
   }
@@ -233,6 +235,39 @@ export default function PerfilPage() {
           <Button variant="outline" className="border-zinc-200 text-zinc-600" onClick={handlePasswordReset}>
             Cambiar contraseña por email
           </Button>
+        </CardContent>
+      </Card>
+      <Card className="border-zinc-200 shadow-none">
+        <CardHeader className="pb-4">
+          <CardTitle className="text-base font-medium flex items-center gap-2">
+            <FileText className="h-4 w-4 text-zinc-400" />
+            Tasa PPM
+          </CardTitle>
+          <CardDescription>Configura tu tasa de Pago Provisional Mensual para el estimador del Dashboard</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="flex items-center gap-2">
+            <Input
+              type="number"
+              step="0.1"
+              value={ppmRate}
+              onChange={e => setPpmRate(e.target.value)}
+              className="border-zinc-200 w-24 tabular-nums"
+            />
+            <span className="text-sm text-zinc-500">%</span>
+            <Button
+              variant="outline"
+              className="border-zinc-200"
+              onClick={async () => {
+                const { data: { user } } = await supabase.auth.getUser()
+                await supabase.from('profiles').update({ ppm_rate: parseFloat(ppmRate) || 0 }).eq('user_id', user!.id)
+                toast.success('Tasa PPM actualizada')
+              }}
+            >
+              Guardar
+            </Button>
+          </div>
+          <p className="text-xs text-zinc-400">Consulta tu tasa con tu contador. Generalmente es entre 0.25% y 0.5% para Pymes.</p>
         </CardContent>
       </Card>
     </div>
