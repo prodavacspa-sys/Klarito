@@ -184,8 +184,14 @@ export default function PerfilPage() {
                         try {
                           const res = await fetch('/api/flow/subscribe', { method: 'POST' })
                           const data = await res.json()
-                          if (data.redirectUrl) window.location.href = data.redirectUrl
-                          else toast.error('Error al iniciar suscripción')
+                          if (data.redirectUrl) {
+                            window.location.href = data.redirectUrl
+                          } else if (data.error === 'ya_suscrito') {
+                            toast.info('Tu suscripción ya está activa')
+                            setSubscriptionStatus('active')
+                          } else {
+                            toast.error('Error al iniciar suscripción')
+                          }
                         } catch {
                           toast.error('Error de conexión')
                         }
