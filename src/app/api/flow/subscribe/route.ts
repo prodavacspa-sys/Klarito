@@ -66,6 +66,8 @@ export async function POST() {
     name, email, externalId: user.id,
   })
 
+  console.log('customer/create result:', JSON.stringify(newCustomer))
+
   if (newCustomer.customerId) {
     customerId = newCustomer.customerId
   } else {
