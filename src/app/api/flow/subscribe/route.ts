@@ -75,14 +75,23 @@ export async function POST() {
   if (profile?.flow_customer_id) {
     customerId = profile.flow_customer_id
   } else {
-    // crear cliente en Flow
-    console.log('Llamando customer/create...')
+    // Intentar crear cliente
     const newCustomer = await flowPost('/customer/create', { name, email, externalId: user.id })
     console.log('customer/create result:', JSON.stringify(newCustomer))
+
     if (newCustomer.customerId) {
       customerId = newCustomer.customerId
-      // guardar en Supabase
       await supabase.from('profiles').update({ flow_customer_id: customerId }).eq('user_id', user.id)
+    } else if (newCustomer.code === 501 && newCustomer.message?.includes('externalId')) {
+      // Cliente ya existe en Flow — recuperarlo por externalId
+      const existing = await flowGet('/customer/getByExternalId', { externalId: user.id })
+      console.log('customer/getByExternalId result:', JSON.stringify(existing))
+      if (existing.customerId) {
+        customerId = existing.customerId
+        await supabase.from('profiles').update({ flow_customer_id: customerId }).eq('user_id', user.id)
+      } else {
+        return NextResponse.json({ error: 'No se pudo recuperar cliente en Flow' }, { status: 400 })
+      }
     } else {
       return NextResponse.json({ error: 'No se pudo crear cliente en Flow' }, { status: 400 })
     }
