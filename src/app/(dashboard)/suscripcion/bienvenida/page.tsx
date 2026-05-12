@@ -9,7 +9,7 @@ export default function BienvenidaPage() {
   const router = useRouter()
 
   useEffect(() => {
-    const timer = setTimeout(() => router.push('/dashboard'), 10000)
+    const timer = setTimeout(() => router.push('/dashboard'), 5000)
     return () => clearTimeout(timer)
   }, [])
 
@@ -45,7 +45,7 @@ export default function BienvenidaPage() {
         <Button className="w-full bg-zinc-900 hover:bg-zinc-700 text-white" onClick={() => router.push('/dashboard')}>
           Ir al dashboard ahora
         </Button>
-        <p className="text-xs text-zinc-400">Redirigiendo automáticamente en 10 segundos...</p>
+        <p className="text-xs text-zinc-400">Redirigiendo automáticamente en 5 segundos...</p>
       </div>
     </div>
   )

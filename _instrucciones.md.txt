@@ -1,140 +1,318 @@
-# Instrucciones: Lógica de cupones por referidos
+# Auditoría Klarito — Correcciones integrales
 
-## Contexto
-- 5-9 referidos completados → aplicar cupón KLARITO50 (50% descuento)
-- 10+ referidos completados → aplicar cupón KLARITOFREE (100% gratis)
-- Los cupones se aplican a la suscripción Flow del usuario
+## PROBLEMA 1: Límites freemium no funcionan en gastos ni costos
 
-## 1. Agrega esta función al final de src/lib/referrals.ts:
+### 1a. En src/app/(dashboard)/gastos/page.tsx:
+
+Agrega import:
+```tsx
+import { UpgradeModal } from '@/components/app/upgrade-modal'
+```
+
+Agrega estados después de const [saving, setSaving]:
+```tsx
+const [subscriptionStatus, setSubscriptionStatus] = useState<string>('inactive')
+const [upgradeOpen, setUpgradeOpen] = useState(false)
+```
+
+En fetchExpenses, agrega después de setExpenses:
+```tsx
+const { data: { user } } = await supabase.auth.getUser()
+if (user) {
+  const { data: profile } = await supabase.from('profiles').select('subscription_status').eq('user_id', user.id).single()
+  setSubscriptionStatus(profile?.subscription_status ?? 'inactive')
+}
+```
+
+Reemplaza el onClick del DialogTrigger del botón "Nuevo gasto". Cambia:
+```tsx
+<Button size="sm" className="bg-zinc-900 hover:bg-zinc-700 text-white">
+```
+Por:
+```tsx
+<Button size="sm" className="bg-zinc-900 hover:bg-zinc-700 text-white" onClick={(e) => {
+  if (subscriptionStatus !== 'active' && expenses.length >= 1) {
+    e.preventDefault()
+    setUpgradeOpen(true)
+  }
+}}>
+```
+
+Al final del return antes del último </div> agrega:
+```tsx
+<UpgradeModal open={upgradeOpen} onClose={() => setUpgradeOpen(false)} reason="gastos" />
+```
+
+### 1b. En src/app/(dashboard)/costos/page.tsx:
+
+Agrega import:
+```tsx
+import { UpgradeModal } from '@/components/app/upgrade-modal'
+```
+
+Agrega estados:
+```tsx
+const [subscriptionStatus, setSubscriptionStatus] = useState<string>('inactive')
+const [upgradeOpen, setUpgradeOpen] = useState(false)
+```
+
+En fetchAll, agrega al final antes de setLoading(false):
+```tsx
+const { data: { user } } = await supabase.auth.getUser()
+if (user) {
+  const { data: profile } = await supabase.from('profiles').select('subscription_status').eq('user_id', user.id).single()
+  setSubscriptionStatus(profile?.subscription_status ?? 'inactive')
+}
+```
+
+Reemplaza la función openNew:
+```tsx
+function openNew() {
+  if (subscriptionStatus !== 'active' && recipes.length >= 1) {
+    setUpgradeOpen(true)
+    return
+  }
+  setEditing(null)
+  setForm({ name: '', description: '', product_id: '', monthly_units: '100' })
+  setItems([emptyItem()])
+  setOpen(true)
+}
+```
+
+Al final del return antes del último </div>:
+```tsx
+<UpgradeModal open={upgradeOpen} onClose={() => setUpgradeOpen(false)} reason="recetas" />
+```
+
+## PROBLEMA 2: El cupón no encuentra al cliente en Flow
+
+El error "No se pudo crear el cliente" ocurre porque newCustomer no tiene .error.code cuando Flow devuelve un error diferente. Necesitamos manejar todos los casos.
+
+### En src/app/api/flow/apply-coupon/route.ts reemplaza el bloque de crear/buscar cliente completo (desde "let customerId" hasta antes de "Crear suscripción con cupón") por:
 
 ```typescript
-export async function updateReferralDiscount(referrerUserId: string) {
-  const supabase = await createClient()
+let customerId: string
 
-  const { data: referrals } = await supabase
-    .from('referrals')
-    .select('id')
-    .eq('referrer_user_id', referrerUserId)
-    .eq('status', 'completed')
+// Intentar crear cliente
+const newCustomer = await flowPost('/customer/create', {
+  name, email, externalId: user.id,
+})
 
-  const count = referrals?.length ?? 0
-
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('flow_subscription_id')
-    .eq('user_id', referrerUserId)
-    .single()
-
-  if (!profile?.flow_subscription_id) return
-
+if (newCustomer.customerId) {
+  customerId = newCustomer.customerId
+} else {
+  // Cliente ya existe o error — buscar por externalId via GET
   const apiKey = process.env.FLOW_API_KEY!
   const secretKey = process.env.FLOW_SECRET_KEY!
   const apiUrl = process.env.FLOW_API_URL!
 
-  function flowSign(params: Record<string, string>) {
-    const keys = Object.keys(params).sort()
-    const toSign = keys.map(k => `${k}${params[k]}`).join('')
-    return require('crypto').createHmac('sha256', secretKey).update(toSign).digest('hex')
-  }
+  const getParams: Record<string, string> = { apiKey, externalId: user.id }
+  const keys = Object.keys(getParams).sort()
+  const toSign = keys.map(k => `${k}${getParams[k]}`).join('')
+  getParams.s = createHmac('sha256', secretKey).update(toSign).digest('hex')
+  const qs = new URLSearchParams(getParams).toString()
+  
+  const getRes = await fetch(`${apiUrl}/customer/getByExternalId?${qs}`)
+  const existing = await getRes.json()
 
-  async function flowPost(endpoint: string, params: Record<string, string>) {
-    const allParams: Record<string, string> = { ...params, apiKey }
-    allParams.s = flowSign(allParams)
-    const body = new URLSearchParams(allParams)
-    const res = await fetch(`${apiUrl}${endpoint}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: body.toString(),
-    })
-    return res.json()
-  }
-
-  if (count >= 10) {
-    // Gratis — cancelar suscripción Flow
-    await flowPost('/subscription/cancel', {
-      subscriptionId: profile.flow_subscription_id,
-    })
-    await supabase.from('profiles')
-      .update({ subscription_status: 'active' })
-      .eq('user_id', referrerUserId)
-  } else if (count >= 5) {
-    // 50% descuento
-    await flowPost('/subscription/addCoupon', {
-      subscriptionId: profile.flow_subscription_id,
-      couponId: 'KLARITO50',
-    })
+  if (existing.customerId) {
+    customerId = existing.customerId
+  } else {
+    // Último intento: buscar por email
+    const listParams: Record<string, string> = { apiKey, filter: email, start: '0', limit: '5' }
+    const listKeys = Object.keys(listParams).sort()
+    const listToSign = listKeys.map(k => `${k}${listParams[k]}`).join('')
+    listParams.s = createHmac('sha256', secretKey).update(listToSign).digest('hex')
+    const listQs = new URLSearchParams(listParams).toString()
+    
+    const listRes = await fetch(`${apiUrl}/customer/list?${listQs}`)
+    const listData = await listRes.json()
+    
+    if (listData.data?.[0]?.customerId) {
+      customerId = listData.data[0].customerId
+    } else {
+      return NextResponse.json({ 
+        error: 'No se pudo obtener el cliente', 
+        debug: { newCustomer, existing, listData } 
+      }, { status: 400 })
+    }
   }
 }
 ```
 
-## 2. En src/app/api/flow/webhook/route.ts en el bloque subscription_charged agrega después de creditReferrer:
+## PROBLEMA 3: Falta PPM en el dashboard
 
-```typescript
-// Actualizar descuento del referidor si corresponde
-const { data: referredProfile } = await supabase
-  .from('profiles')
-  .select('referred_by')
-  .eq('user_id', customerId)
-  .single()
+### En src/components/app/dashboard-client.tsx:
 
-if (referredProfile?.referred_by) {
-  const { data: referrerProfile } = await supabase
-    .from('profiles')
-    .select('user_id')
-    .eq('referral_code', referredProfile.referred_by)
-    .single()
-
-  if (referrerProfile) {
-    await updateReferralDiscount(referrerProfile.user_id)
-  }
-}
+Agrega a la interfaz Props:
+```tsx
+ppmRate?: number
 ```
 
-## 3. Agrega el import en el webhook:
-import { creditReferrer, updateReferralDiscount } from '@/lib/referrals'
+Agrega la prop al destructuring del componente.
 
-## 4. En src/app/(dashboard)/referidos/page.tsx agrega en las tarjetas de resumen una nueva sección que muestre el nivel actual:
+Después del bloque del Estimador F29, agrega esta sección:
+```tsx
+{/* PPM */}
+<div className="bg-white border border-zinc-200 rounded-xl p-5">
+  <div className="flex items-center gap-2 mb-4">
+    <FileText className="h-4 w-4 text-zinc-400" />
+    <p className="text-sm font-medium text-zinc-900">Pago Provisional Mensual (PPM)</p>
+    <span className="text-xs text-zinc-400 ml-1">estimación referencial</span>
+  </div>
+  <div className="grid grid-cols-2 gap-4">
+    <div className="bg-zinc-50 rounded-lg p-4">
+      <p className="text-xs text-zinc-400">Base imponible (ventas netas)</p>
+      <p className="text-xl font-semibold tabular-nums text-zinc-900 mt-1">{fmt(ventasNetas)}</p>
+    </div>
+    <div className="bg-amber-50 rounded-lg p-4 border border-amber-100">
+      <p className="text-xs text-zinc-400">PPM estimado ({ppmRate ?? 0}%)</p>
+      <p className="text-xl font-semibold tabular-nums text-amber-600 mt-1">{fmt(Math.round(ventasNetas * ((ppmRate ?? 0) / 100)))}</p>
+      <p className="text-xs text-zinc-400 mt-0.5">configura tu tasa en Perfil</p>
+    </div>
+  </div>
+</div>
+```
 
-Después de las 3 tarjetas agrega:
+### En src/app/(dashboard)/dashboard/page.tsx:
 
+Agrega la consulta del ppmRate al fetch del profile:
+```tsx
+const { data: profile } = await supabase.from('profiles').select('business_name, ppm_rate').eq('user_id', user!.id).single()
+```
+
+Pasa la prop al componente:
+```tsx
+ppmRate={profile?.ppm_rate ?? 0}
+```
+
+## PROBLEMA 4: Falta campo ppm_rate en profiles
+
+Ejecutar en Supabase SQL Editor:
+```sql
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS ppm_rate NUMERIC(5,2) NOT NULL DEFAULT 0;
+```
+
+### En src/app/(dashboard)/perfil/page.tsx:
+
+Agrega estado:
+```tsx
+const [ppmRate, setPpmRate] = useState('0')
+```
+
+En fetchProfile agrega:
+```tsx
+setPpmRate(String(data.ppm_rate ?? 0))
+```
+
+Agrega una nueva Card después de Seguridad:
 ```tsx
 <Card className="border-zinc-200 shadow-none">
-  <CardContent className="pt-4 pb-4">
-    <div className="flex items-center justify-between">
-      <div>
-        <p className="text-xs text-zinc-400">Tu nivel actual</p>
-        <p className="text-sm font-medium text-zinc-900 mt-1">
-          {completedReferrals >= 10
-            ? '🎉 ¡Servicio gratuito!'
-            : completedReferrals >= 5
-            ? '⭐ 50% de descuento'
-            : `${completedReferrals}/5 para 50% descuento`}
-        </p>
-      </div>
-      <div className="text-right">
-        <p className="text-xs text-zinc-400">Pagas actualmente</p>
-        <p className="text-lg font-semibold tabular-nums text-zinc-900">
-          {completedReferrals >= 10
-            ? '$0'
-            : completedReferrals >= 5
-            ? '$2.585'
-            : '$5.170'}
-        </p>
-      </div>
-    </div>
-    <div className="mt-3 bg-zinc-100 rounded-full h-2">
-      <div
-        className="bg-zinc-900 h-2 rounded-full transition-all"
-        style={{ width: `${Math.min(100, (completedReferrals / 10) * 100)}%` }}
+  <CardHeader className="pb-4">
+    <CardTitle className="text-base font-medium flex items-center gap-2">
+      <FileText className="h-4 w-4 text-zinc-400" />
+      Tasa PPM
+    </CardTitle>
+    <CardDescription>Configura tu tasa de Pago Provisional Mensual para el estimador del Dashboard</CardDescription>
+  </CardHeader>
+  <CardContent className="space-y-3">
+    <div className="flex items-center gap-2">
+      <Input
+        type="number"
+        step="0.1"
+        value={ppmRate}
+        onChange={e => setPpmRate(e.target.value)}
+        className="border-zinc-200 w-24 tabular-nums"
       />
+      <span className="text-sm text-zinc-500">%</span>
+      <Button
+        variant="outline"
+        className="border-zinc-200"
+        onClick={async () => {
+          const { data: { user } } = await supabase.auth.getUser()
+          await supabase.from('profiles').update({ ppm_rate: parseFloat(ppmRate) || 0 }).eq('user_id', user!.id)
+          toast.success('Tasa PPM actualizada')
+        }}
+      >
+        Guardar
+      </Button>
     </div>
-    <div className="flex justify-between text-xs text-zinc-400 mt-1">
-      <span>0</span>
-      <span>5 → 50%</span>
-      <span>10 → gratis</span>
-    </div>
+    <p className="text-xs text-zinc-400">Consulta tu tasa con tu contador. Generalmente es entre 0.25% y 0.5% para Pymes.</p>
   </CardContent>
 </Card>
 ```
 
-## 5. Haz git add ., commit con mensaje "feat: cupones por nivel de referidos" y push.
+Agrega FileText al import de lucide-react en perfil.
+
+## PROBLEMA 5: Ventas y productos necesitan ordenamiento y paginación
+
+### En src/app/(dashboard)/inventario/page.tsx:
+
+Agrega estados para ordenamiento:
+```tsx
+const [sortBy, setSortBy] = useState<'name' | 'created_at'>('name')
+const [sortAsc, setSortAsc] = useState(true)
+const [pageSize, setPageSize] = useState(20)
+const [currentPage, setCurrentPage] = useState(1)
+```
+
+Reemplaza la query de fetchProducts:
+```tsx
+async function fetchProducts() {
+  setLoading(true)
+  const { data: { user } } = await supabase.auth.getUser()
+  if (user) {
+    const { data: profile } = await supabase.from('profiles').select('subscription_status').eq('user_id', user.id).single()
+    setSubscriptionStatus(profile?.subscription_status ?? 'inactive')
+  }
+  const { data, count } = await supabase
+    .from('products')
+    .select('*', { count: 'exact' })
+    .eq('is_active', true)
+    .order(sortBy, { ascending: sortAsc })
+    .range((currentPage - 1) * pageSize, currentPage * pageSize - 1)
+  setProducts(data ?? [])
+  setLoading(false)
+}
+```
+
+Agrega useEffect para refetch cuando cambian los parámetros:
+```tsx
+useEffect(() => { fetchProducts() }, [sortBy, sortAsc, pageSize, currentPage])
+```
+
+Agrega controles de ordenamiento y paginación en la UI antes de la tabla:
+```tsx
+<div className="flex items-center justify-between px-4 py-2 bg-zinc-50 border-b border-zinc-100">
+  <div className="flex items-center gap-2">
+    <select value={sortBy} onChange={e => { setSortBy(e.target.value as any); setCurrentPage(1) }} className="text-xs border border-zinc-200 rounded px-2 py-1 bg-white">
+      <option value="name">Nombre A-Z</option>
+      <option value="created_at">Fecha</option>
+    </select>
+    <button onClick={() => setSortAsc(!sortAsc)} className="text-xs text-zinc-500 hover:text-zinc-900">
+      {sortAsc ? '↑' : '↓'}
+    </button>
+  </div>
+  <div className="flex items-center gap-2">
+    <select value={pageSize} onChange={e => { setPageSize(Number(e.target.value)); setCurrentPage(1) }} className="text-xs border border-zinc-200 rounded px-2 py-1 bg-white">
+      <option value={20}>20</option>
+      <option value={50}>50</option>
+      <option value={100}>100</option>
+    </select>
+    <span className="text-xs text-zinc-400">por página</span>
+  </div>
+</div>
+```
+
+Agrega paginación al final de la tabla:
+```tsx
+<div className="flex items-center justify-between px-4 py-2 border-t border-zinc-100">
+  <span className="text-xs text-zinc-400">Página {currentPage}</span>
+  <div className="flex gap-1">
+    <Button variant="outline" size="sm" disabled={currentPage <= 1} onClick={() => setCurrentPage(p => p - 1)} className="h-7 text-xs border-zinc-200">Anterior</Button>
+    <Button variant="outline" size="sm" onClick={() => setCurrentPage(p => p + 1)} className="h-7 text-xs border-zinc-200">Siguiente</Button>
+  </div>
+</div>
+```
+
+## 6. Ejecuta SQL en Supabase para el campo ppm_rate, luego haz git add ., commit "fix: auditoría completa - límites, cupón, PPM, paginación" y push.
