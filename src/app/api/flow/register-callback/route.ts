@@ -8,14 +8,14 @@ export async function GET(request: Request) {
   const userId = searchParams.get('uid')
 
   if (!planId || !userId) {
-    return NextResponse.redirect(`${origin}/perfil?error=missing_params`)
+    return NextResponse.redirect(`${origin}/dashboard`)
   }
 
   // Usar cid si viene, sino error
   const customerId = cid
 
   if (!customerId) {
-    return NextResponse.redirect(`${origin}/perfil?error=missing_customer`)
+    return NextResponse.redirect(`${origin}/dashboard`)
   }
 
   const { createHmac } = await import('crypto')
@@ -56,5 +56,5 @@ export async function GET(request: Request) {
     return Response.redirect(`${origin}/suscripcion/bienvenida`)
   }
 
-  return Response.redirect(`${origin}/perfil?error=subscription_failed`)
+  return Response.redirect(`${origin}/dashboard`)
 }
