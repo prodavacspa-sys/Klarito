@@ -30,7 +30,8 @@ export async function updateSession(request: NextRequest) {
 
   const isPublicAny = request.nextUrl.pathname.startsWith('/auth/confirm') ||
                       request.nextUrl.pathname.startsWith('/suscripcion') ||
-                      request.nextUrl.pathname.startsWith('/api/flow')
+                      request.nextUrl.pathname.startsWith('/api/flow') ||
+                      request.nextUrl.pathname.startsWith('/api/')
 
   if (!user && !isPublicOnly && !isPublicAny) {
     const url = request.nextUrl.clone()
