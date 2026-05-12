@@ -23,20 +23,22 @@ export async function updateSession(request: NextRequest) {
 
   const { data: { user } } = await supabase.auth.getUser()
 
-  const isAuthRoute = request.nextUrl.pathname.startsWith('/login') ||
-                      request.nextUrl.pathname.startsWith('/registro') ||
-                      request.nextUrl.pathname.startsWith('/recuperar-password') ||
-                      request.nextUrl.pathname.startsWith('/actualizar-password') ||
-                      request.nextUrl.pathname.startsWith('/auth/confirm') ||
-                      request.nextUrl.pathname.startsWith('/suscripcion')
+  const isPublicOnly = request.nextUrl.pathname.startsWith('/login') ||
+                       request.nextUrl.pathname.startsWith('/registro') ||
+                       request.nextUrl.pathname.startsWith('/recuperar-password') ||
+                       request.nextUrl.pathname.startsWith('/actualizar-password')
 
-  if (!user && !isAuthRoute) {
+  const isPublicAny = request.nextUrl.pathname.startsWith('/auth/confirm') ||
+                      request.nextUrl.pathname.startsWith('/suscripcion') ||
+                      request.nextUrl.pathname.startsWith('/api/flow')
+
+  if (!user && !isPublicOnly && !isPublicAny) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
     return NextResponse.redirect(url)
   }
 
-  if (user && isAuthRoute) {
+  if (user && isPublicOnly) {
     const url = request.nextUrl.clone()
     url.pathname = '/dashboard'
     return NextResponse.redirect(url)
