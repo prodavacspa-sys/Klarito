@@ -76,7 +76,8 @@ export async function POST() {
     customerId = profile.flow_customer_id
   } else {
     // Intentar crear cliente
-    const newCustomer = await flowPost('/customer/create', { name, email, externalId: user.id })
+    const externalId = `${user.id}_${Date.now()}`
+    const newCustomer = await flowPost('/customer/create', { name, email, externalId })
     console.log('customer/create result:', JSON.stringify(newCustomer))
 
     if (newCustomer.customerId) {
