@@ -103,6 +103,7 @@ export async function POST() {
       customerId,
       url_return: returnUrlWithCid,
     })
+    console.log('customer/register result:', JSON.stringify(register))
     if (register.url && register.token) {
       return NextResponse.json({ redirectUrl: `${register.url}?token=${register.token}` })
     }
