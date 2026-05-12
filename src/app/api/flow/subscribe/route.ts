@@ -98,6 +98,7 @@ export async function POST() {
 
   if (!customerData.creditCardType) {
     // Sin tarjeta — enviar a registrar tarjeta
+    console.log('url_return que se envía a Flow:', returnUrlWithCid)
     const register = await flowPost('/customer/register', {
       customerId,
       url_return: returnUrlWithCid,
