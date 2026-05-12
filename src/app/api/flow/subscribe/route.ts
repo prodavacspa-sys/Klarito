@@ -83,11 +83,12 @@ export async function POST() {
       customerId = newCustomer.customerId
       await supabase.from('profiles').update({ flow_customer_id: customerId }).eq('user_id', user.id)
     } else if (newCustomer.code === 501 && newCustomer.message?.includes('externalId')) {
-      // Cliente ya existe en Flow — recuperarlo por externalId
-      const existing = await flowGet('/customer/getByExternalId', { externalId: user.id })
-      console.log('customer/getByExternalId result:', JSON.stringify(existing))
-      if (existing.customerId) {
-        customerId = existing.customerId
+      // Cliente ya existe — buscarlo por email
+      const existing = await flowGet('/customer/list', { filter: email, limit: '10', start: '0' })
+      console.log('customer/list result:', JSON.stringify(existing))
+      const found = existing.data?.find((c: any) => c.email === email)
+      if (found?.customerId) {
+        customerId = found.customerId
         await supabase.from('profiles').update({ flow_customer_id: customerId }).eq('user_id', user.id)
       } else {
         return NextResponse.json({ error: 'No se pudo recuperar cliente en Flow' }, { status: 400 })
