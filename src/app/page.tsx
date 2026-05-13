@@ -215,12 +215,12 @@ export default function Home() {
             <div>
               <div className="flex items-baseline justify-center gap-1">
                 <span className="text-4xl font-bold text-zinc-900">
-                  $4.344
+                  $5.950
                 </span>
-                <span className="text-zinc-500 text-sm">+ IVA /mes</span>
+                <span className="text-zinc-500 text-sm">/mes</span>
               </div>
               <p className="text-xs text-zinc-400 mt-1">
-                $5.950 total con IVA
+                IVA incluido
               </p>
             </div>
 
