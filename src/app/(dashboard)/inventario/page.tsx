@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -21,7 +22,6 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { toast } from 'sonner'
-import { UpgradeModal } from '@/components/app/upgrade-modal'
 import { Plus, Pencil, Trash2, Download, AlertTriangle } from 'lucide-react'
 
 type Product = {
@@ -53,7 +53,7 @@ export default function InventarioPage() {
   const [form, setForm] = useState(emptyForm)
   const [saving, setSaving] = useState(false)
   const [subscriptionStatus, setSubscriptionStatus] = useState<string>('inactive')
-  const [upgradeModal, setUpgradeModal] = useState<{ open: boolean; reason: 'productos' | 'limite_productos' }>({ open: false, reason: 'productos' })
+  const router = useRouter()
   const [sortBy, setSortBy] = useState<'name' | 'created_at'>('name')
   const [sortAsc, setSortAsc] = useState(true)
   const [pageSize, setPageSize] = useState(20)
@@ -97,13 +97,12 @@ export default function InventarioPage() {
   }
 
   function openNew() {
-    const isActive = subscriptionStatus === 'active'
-    if (!isActive && products.length >= 1) {
-      setUpgradeModal({ open: true, reason: 'productos' })
+    if (subscriptionStatus !== 'active' && products.length >= 3) {
+      router.push('/suscripcion/activar')
       return
     }
-    if (isActive && products.length >= 100) {
-      setUpgradeModal({ open: true, reason: 'limite_productos' })
+    if (subscriptionStatus === 'active' && products.length >= 200) {
+      toast.error('Has alcanzado el límite de 200 productos')
       return
     }
     setEditing(null)
@@ -316,11 +315,6 @@ export default function InventarioPage() {
           </>
         )}
       </div>
-      <UpgradeModal
-        open={upgradeModal.open}
-        onClose={() => setUpgradeModal(u => ({ ...u, open: false }))}
-        reason={upgradeModal.reason}
-      />
     </div>
   )
 }

@@ -79,14 +79,19 @@ export default function NuevaVentaPage() {
   const ivaAmount = subtotal - netAmount
 
   async function handleConfirm() {
-    if (subscriptionStatus !== 'active') {
-      router.push('/suscripcion/activar')
-      return
-    }
     if (cart.length === 0) { toast.error('El carrito está vacío'); return }
     setSaving(true)
 
     const { data: { user } } = await supabase.auth.getUser()
+
+    if (subscriptionStatus !== 'active') {
+      const { count } = await supabase.from('sales').select('*', { count: 'exact', head: true }).eq('user_id', user!.id)
+      if ((count ?? 0) >= 3) {
+        router.push('/suscripcion/activar')
+        setSaving(false)
+        return
+      }
+    }
 
     const { data: sale, error: saleError } = await supabase
       .from('sales')

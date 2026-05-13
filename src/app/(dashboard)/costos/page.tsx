@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -10,7 +11,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { toast } from 'sonner'
 import { Plus, Pencil, Trash2, Download, ChefHat, ArrowRight, Info } from 'lucide-react'
-import { UpgradeModal } from '@/components/app/upgrade-modal'
 
 type Product = { id: string; name: string }
 
@@ -58,7 +58,7 @@ export default function CostosPage() {
   const [form, setForm] = useState({ name: '', description: '', product_id: '', monthly_units: '100' })
   const [saving, setSaving] = useState(false)
   const [subscriptionStatus, setSubscriptionStatus] = useState<string>('inactive')
-  const [upgradeOpen, setUpgradeOpen] = useState(false)
+  const router = useRouter()
 
   useEffect(() => { fetchAll() }, [])
 
@@ -85,8 +85,12 @@ export default function CostosPage() {
   }
 
   function openNew() {
-    if (subscriptionStatus !== 'active' && recipes.length >= 1) {
-      setUpgradeOpen(true)
+    if (subscriptionStatus !== 'active' && recipes.length >= 3) {
+      router.push('/suscripcion/activar')
+      return
+    }
+    if (subscriptionStatus === 'active' && recipes.length >= 200) {
+      toast.error('Has alcanzado el límite de 200 recetas')
       return
     }
     setEditing(null)
@@ -386,7 +390,6 @@ export default function CostosPage() {
           })}
         </div>
       )}
-      <UpgradeModal open={upgradeOpen} onClose={() => setUpgradeOpen(false)} reason="recetas" />
     </div>
   )
 }

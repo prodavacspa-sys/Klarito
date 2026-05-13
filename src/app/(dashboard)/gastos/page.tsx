@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -12,7 +13,6 @@ import { toast } from 'sonner'
 import { Plus, Trash2, Download, Receipt, TrendingDown } from 'lucide-react'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
-import { UpgradeModal } from '@/components/app/upgrade-modal'
 
 type Expense = {
   id: string
@@ -43,7 +43,7 @@ export default function GastosPage() {
   const [form, setForm] = useState(emptyForm)
   const [saving, setSaving] = useState(false)
   const [subscriptionStatus, setSubscriptionStatus] = useState<string>('inactive')
-  const [upgradeOpen, setUpgradeOpen] = useState(false)
+  const router = useRouter()
 
   useEffect(() => { fetchExpenses() }, [])
 
@@ -135,9 +135,9 @@ export default function GastosPage() {
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
               <Button size="sm" className="bg-zinc-900 hover:bg-zinc-700 text-white" onClick={(e) => {
-                  if (subscriptionStatus !== 'active' && expenses.length >= 1) {
+                  if (subscriptionStatus !== 'active' && expenses.length >= 3) {
                     e.preventDefault()
-                    setUpgradeOpen(true)
+                    router.push('/suscripcion/activar')
                   }
                 }}>
                 <Plus className="h-4 w-4 mr-2" />
@@ -306,7 +306,6 @@ export default function GastosPage() {
           </div>
         )}
       </div>
-      <UpgradeModal open={upgradeOpen} onClose={() => setUpgradeOpen(false)} reason="gastos" />
     </div>
   )
 }
