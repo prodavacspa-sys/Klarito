@@ -32,18 +32,19 @@ export async function sendTrialEndingEmail(email: string, businessName: string) 
   await resend.emails.send({
     from: FROM,
     to: email,
-    subject: 'Tu prueba gratuita termina mañana — Klarito',
+    subject: 'Tu período de prueba termina mañana — Klarito',
     html: `
       <div style="font-family: sans-serif; max-width: 520px; margin: 0 auto; padding: 32px;">
-        <h1 style="font-size: 24px; color: #18181b;">Hola, ${businessName}</h1>
-        <p style="color: #52525b;">Tu período de prueba gratuita en Klarito termina <strong>mañana</strong>. A partir de ese momento se cobrará <strong>$5.950/mes</strong> al medio de pago registrado.</p>
-        <p style="color: #52525b;">Si no deseas continuar, puedes cancelar tu suscripción antes de que se realice el cobro:</p>
-        <a href="https://www.klarito.cl/perfil" style="display:inline-block; background:#18181b; color:#fff; padding:12px 24px; border-radius:8px; text-decoration:none; margin-top:8px;">
-          Administrar suscripción
+        <h1 style="font-size: 20px; color: #18181b;">Hola, ${businessName} 👋</h1>
+        <p style="color: #52525b;">Tu período de prueba gratuito de Klarito termina mañana.</p>
+        <p style="color: #52525b;">Para seguir usando Klarito sin interrupciones, activa tu suscripción hoy.</p>
+        <a href="https://www.klarito.cl/suscripcion/activar"
+           style="display: inline-block; background: #18181b; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600; margin: 16px 0;">
+          Activar suscripción — $5.950/mes
         </a>
-        <p style="color: #a1a1aa; font-size: 13px; margin-top: 32px;">Si decides continuar, no necesitas hacer nada. El cobro se realizará automáticamente.</p>
+        <p style="color: #71717a; font-size: 13px;">Si no activas tu cuenta, perderás acceso a tus datos en 30 días.</p>
       </div>
-    `,
+    `
   })
 }
 
