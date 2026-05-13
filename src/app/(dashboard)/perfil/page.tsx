@@ -166,12 +166,9 @@ export default function PerfilPage() {
           )}
           {subscriptionStatus !== 'active' && (
             <>
-              <Button
-                className="w-full bg-zinc-900 hover:bg-zinc-700 text-white"
-                onClick={() => setShowPaymentModal(true)}
-              >
+              <a href="/suscripcion/activar" className="w-full inline-flex items-center justify-center bg-zinc-900 hover:bg-zinc-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
                 Activar suscripción — $5.950/mes
-              </Button>
+              </a>
 
               <Dialog open={showPaymentModal} onOpenChange={setShowPaymentModal}>
                 <DialogContent className="sm:max-w-sm">
