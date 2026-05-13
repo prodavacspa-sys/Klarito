@@ -9,6 +9,9 @@ export default function BienvenidaPage() {
   const router = useRouter()
 
   useEffect(() => {
+    if (typeof window !== 'undefined' && (window as any).fbq) {
+      (window as any).fbq('track', 'Purchase', { value: 5170, currency: 'CLP' })
+    }
     const timer = setTimeout(() => router.push('/dashboard'), 5000)
     return () => clearTimeout(timer)
   }, [])

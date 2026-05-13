@@ -69,6 +69,9 @@ export default function RegistroPage() {
       referred_by: form.referralCode || null,
     }).eq('user_id', data.user.id)
 
+    if (typeof window !== 'undefined' && (window as any).fbq) {
+      (window as any).fbq('track', 'Lead')
+    }
     setStep('sent')
     setLoading(false)
   }
