@@ -31,7 +31,7 @@ export async function POST(request: Request) {
   const { data: profile } = await supabase
     .from('profiles')
     .select('email, business_name')
-    .eq('user_id', customerId)
+    .eq('flow_customer_id', customerId)
     .single()
 
   const email = profile?.email ?? ''
@@ -40,21 +40,21 @@ export async function POST(request: Request) {
   if (event === 'subscription_created') {
     await supabase.from('profiles')
       .update({ subscription_status: 'active', flow_subscription_id: subscriptionId })
-      .eq('user_id', customerId)
+      .eq('flow_customer_id', customerId)
     await sendWelcomeEmail(email, businessName)
   }
 
   if (event === 'subscription_charged') {
     await supabase.from('profiles')
       .update({ subscription_status: 'active' })
-      .eq('user_id', customerId)
+      .eq('flow_customer_id', customerId)
     await sendPaymentSuccessEmail(email, businessName)
     await creditReferrer(customerId)
 
     const { data: referredProfile } = await supabase
       .from('profiles')
       .select('referred_by')
-      .eq('user_id', customerId)
+      .eq('flow_customer_id', customerId)
       .single()
 
     if (referredProfile?.referred_by) {
@@ -73,13 +73,13 @@ export async function POST(request: Request) {
   if (event === 'subscription_cancelled' || event === 'subscription_expired') {
     await supabase.from('profiles')
       .update({ subscription_status: 'inactive' })
-      .eq('user_id', customerId)
+      .eq('flow_customer_id', customerId)
   }
 
   if (event === 'subscription_charge_failed') {
     await supabase.from('profiles')
       .update({ subscription_status: 'inactive' })
-      .eq('user_id', customerId)
+      .eq('flow_customer_id', customerId)
     await sendPaymentFailedEmail(email, businessName)
   }
 
