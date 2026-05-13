@@ -139,6 +139,31 @@ export default function PerfilPage() {
               : <Badge variant="outline" className="text-zinc-400 border-zinc-200">Inactivo</Badge>
             }
           </div>
+          {subscriptionStatus === 'active' && (
+            <div className="border border-red-200 rounded-xl p-4 space-y-3">
+              <p className="text-sm font-medium text-red-600">Cancelar suscripción</p>
+              <p className="text-xs text-zinc-500">
+                Si cancelas durante el período de prueba no se realizará ningún cobro.
+                Tu acceso se mantendrá hasta el fin del período actual.
+              </p>
+              <Button
+                variant="outline"
+                className="w-full border-red-200 text-red-600 hover:bg-red-50"
+                onClick={async () => {
+                  if (!confirm('¿Estás seguro que deseas cancelar tu suscripción?')) return
+                  const res = await fetch('/api/flow/cancel', { method: 'POST' })
+                  if (res.ok) {
+                    alert('Suscripción cancelada correctamente.')
+                    window.location.reload()
+                  } else {
+                    alert('Error al cancelar. Intenta nuevamente.')
+                  }
+                }}
+              >
+                Cancelar suscripción
+              </Button>
+            </div>
+          )}
           {subscriptionStatus !== 'active' && (
             <>
               <Button

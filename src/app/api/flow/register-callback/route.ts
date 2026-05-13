@@ -52,14 +52,15 @@ export async function GET(request: Request) {
   const supabase = await createClient()
 
   if (subscription.subscriptionId) {
-    const { error: updateError } = await supabase.from('profiles')
-      .update({ subscription_status: 'active', flow_subscription_id: subscription.subscriptionId })
+    await supabase.from('profiles')
+      .update({
+        subscription_status: 'active',
+        flow_subscription_id: subscription.subscriptionId
+      })
       .eq('user_id', userId)
-    console.log('supabase update error:', JSON.stringify(updateError))
-    return Response.redirect(`${origin}/suscripcion/bienvenida`)
+    return Response.redirect(`${siteUrl}/suscripcion/bienvenida`)
   }
-
-  return Response.redirect(`${origin}/dashboard`)
+  return Response.redirect(`${siteUrl}/suscripcion/bienvenida`)
 }
 
 export async function POST(request: Request) {
