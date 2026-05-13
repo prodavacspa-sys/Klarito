@@ -10,7 +10,7 @@ interface TrialBannerProps {
 export function TrialBanner({ subscriptionStatus, trialDaysLeft }: TrialBannerProps) {
   if (subscriptionStatus === 'active') {
     return (
-      <div className="flex items-center justify-between px-6 py-2 bg-emerald-50 border-b border-emerald-200">
+      <div className="mt-14 md:mt-0 flex items-center justify-between px-6 py-2 bg-emerald-50 border-b border-emerald-200">
         <p className="text-sm text-emerald-700 font-medium">
           ✓ Estás en modo de prueba. Tu cuenta está activa y tienes{' '}
           <span className="font-bold">{trialDaysLeft} días gratis</span> restantes.
@@ -33,7 +33,7 @@ export function TrialBanner({ subscriptionStatus, trialDaysLeft }: TrialBannerPr
   }
 
   return (
-    <div className="bg-amber-50 border-b border-amber-200 px-6 py-3 flex items-center justify-between">
+    <div className="mt-14 md:mt-0 bg-amber-50 border-b border-amber-200 px-6 py-3 flex items-center justify-between">
       <span className="text-sm text-amber-800">
         <strong>Estás en modo prueba.</strong> Activa tu cuenta para continuar usando Klarito después de los 7 días gratis.
       </span>
