@@ -2,7 +2,7 @@ import { createHmac } from 'crypto'
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { sendWelcomeEmail, sendPaymentSuccessEmail, sendPaymentFailedEmail } from '@/lib/email'
-import { creditReferrer, updateReferralDiscount } from '@/lib/referrals'
+import { creditReferrer } from '@/lib/referrals'
 
 function flowSign(params: Record<string, string>, secret: string) {
   const keys = Object.keys(params).sort()
@@ -49,25 +49,7 @@ export async function POST(request: Request) {
       .update({ subscription_status: 'active' })
       .eq('flow_customer_id', customerId)
     await sendPaymentSuccessEmail(email, businessName)
-    await creditReferrer(customerId)
-
-    const { data: referredProfile } = await supabase
-      .from('profiles')
-      .select('referred_by')
-      .eq('flow_customer_id', customerId)
-      .single()
-
-    if (referredProfile?.referred_by) {
-      const { data: referrerProfile } = await supabase
-        .from('profiles')
-        .select('user_id')
-        .eq('referral_code', referredProfile.referred_by)
-        .single()
-
-      if (referrerProfile) {
-        await updateReferralDiscount(referrerProfile.user_id)
-      }
-    }
+    await creditReferrer(customerId) // customerId es flow_customer_id, ya corregido en referrals.ts
   }
 
   if (event === 'subscription_cancelled' || event === 'subscription_expired') {
