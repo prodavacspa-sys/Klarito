@@ -38,7 +38,7 @@ export function TrialBanner({ subscriptionStatus, trialDaysLeft }: TrialBannerPr
         <strong>Estás en modo prueba.</strong> Activa tu cuenta para continuar usando Klarito después de los 7 días gratis.
       </span>
       <a href="/perfil" className="text-xs font-medium bg-amber-800 text-white px-3 py-1.5 rounded-lg hover:bg-amber-900 transition-colors">
-        Activar ahora — $5.170/mes
+        Activar ahora — $5.950/mes
       </a>
     </div>
   )

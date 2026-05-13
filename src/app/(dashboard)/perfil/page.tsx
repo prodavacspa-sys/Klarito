@@ -132,7 +132,7 @@ export default function PerfilPage() {
           <div className="flex items-center justify-between bg-zinc-50 rounded-lg px-4 py-3">
             <div>
               <p className="text-sm font-medium text-zinc-900">Plan mensual</p>
-              <p className="text-xs text-zinc-400 mt-0.5">$5.170 / mes (IVA incluido)</p>
+              <p className="text-xs text-zinc-400 mt-0.5">$5.950 / mes (IVA incluido)</p>
             </div>
             {subscriptionStatus === 'active'
               ? <Badge variant="outline" className="text-emerald-600 border-emerald-200 bg-emerald-50">Activo</Badge>
@@ -170,7 +170,7 @@ export default function PerfilPage() {
                 className="w-full bg-zinc-900 hover:bg-zinc-700 text-white"
                 onClick={() => setShowPaymentModal(true)}
               >
-                Activar suscripción — $5.170/mes
+                Activar suscripción — $5.950/mes
               </Button>
 
               <Dialog open={showPaymentModal} onOpenChange={setShowPaymentModal}>
@@ -189,11 +189,11 @@ export default function PerfilPage() {
                       </div>
                       <div className="flex justify-between text-sm">
                         <span className="text-zinc-500">IVA</span>
-                        <span className="font-medium tabular-nums">$170</span>
+                        <span className="font-medium tabular-nums">$950</span>
                       </div>
                       <div className="flex justify-between text-sm font-semibold border-t border-zinc-200 pt-2">
                         <span className="text-zinc-900">Total mensual</span>
-                        <span className="tabular-nums">$5.170</span>
+                        <span className="tabular-nums">$5.950</span>
                       </div>
                       <div className="flex justify-between text-sm">
                         <span className="text-zinc-500">Período de prueba</span>

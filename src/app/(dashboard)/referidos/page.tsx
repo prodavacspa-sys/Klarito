@@ -54,7 +54,7 @@ export default function ReferidosPage() {
 
   const referralUrl = `https://www.klarito.cl/registro?ref=${referralCode}`
   const completedReferrals = referrals.filter(r => r.status === 'completed').length
-  const monthsFree = Math.floor(credits / 5170)
+  const monthsFree = Math.floor(credits / 5950)
 
   function copyLink() {
     navigator.clipboard.writeText(referralUrl)
@@ -77,7 +77,7 @@ export default function ReferidosPage() {
           <CardContent className="pt-4 pb-4">
             <p className="text-xs text-zinc-400">Crédito disponible</p>
             <p className="text-xl font-semibold tabular-nums text-emerald-600 mt-1">{fmt(credits)}</p>
-            <p className="text-xs text-zinc-400 mt-0.5">{monthsFree > 0 ? `${monthsFree} mes${monthsFree > 1 ? 'es' : ''} gratis` : 'acumula $5.170 para 1 mes'}</p>
+            <p className="text-xs text-zinc-400 mt-0.5">{monthsFree > 0 ? `${monthsFree} mes${monthsFree > 1 ? 'es' : ''} gratis` : 'acumula $5.950 para 1 mes'}</p>
           </CardContent>
         </Card>
         <Card className="border-zinc-200 shadow-none">
@@ -115,8 +115,8 @@ export default function ReferidosPage() {
                 {completedReferrals >= 10
                   ? '$0'
                   : completedReferrals >= 5
-                  ? '$2.585'
-                  : '$5.170'}
+                  ? '$2.975'
+                  : '$5.950'}
               </p>
             </div>
           </div>
@@ -154,7 +154,7 @@ export default function ReferidosPage() {
                 <div className="flex items-center gap-2 text-sm">
                   <span className="font-medium text-amber-600">5 referidos</span>
                   <span className="text-zinc-400">—</span>
-                  <span className="font-medium text-amber-600">50% descuento permanente ($2.585/mes)</span>
+                  <span className="font-medium text-amber-600">50% descuento permanente ($2.975/mes)</span>
                 </div>
                 <div className="flex items-center gap-2 text-sm">
                   <span className="font-medium text-emerald-600">10 referidos</span>

@@ -285,11 +285,11 @@ export default function NuevaVentaPage() {
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-zinc-500">IVA</span>
-                <span className="font-medium tabular-nums">$170</span>
+                <span className="font-medium tabular-nums">$950</span>
               </div>
               <div className="flex justify-between text-sm font-semibold border-t border-zinc-200 pt-2">
                 <span className="text-zinc-900">Total mensual</span>
-                <span className="tabular-nums">$5.170</span>
+                <span className="tabular-nums">$5.950</span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-zinc-500">Período de prueba</span>

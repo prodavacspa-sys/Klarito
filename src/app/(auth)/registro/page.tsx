@@ -105,7 +105,7 @@ export default function RegistroPage() {
         <Card className="border-zinc-200 shadow-none">
           <CardHeader className="pb-4">
             <CardTitle className="text-lg font-medium">Crear cuenta</CardTitle>
-            <CardDescription>7 días gratis, luego $5.170/mes con IVA incluido.</CardDescription>
+            <CardDescription>7 días gratis, luego $5.950/mes con IVA incluido.</CardDescription>
           </CardHeader>
           <form onSubmit={handleRegistro}>
             <CardContent className="space-y-4">

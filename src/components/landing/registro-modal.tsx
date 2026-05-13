@@ -117,7 +117,7 @@ export function RegistroModal({ fullWidth, variant }: { fullWidth?: boolean; var
               <>
                 <div className="space-y-1">
                   <h2 className="text-xl font-semibold text-zinc-900">Crear cuenta</h2>
-                  <p className="text-sm text-zinc-500">7 días gratis, luego $5.170/mes con IVA incluido.</p>
+                  <p className="text-sm text-zinc-500">7 días gratis, luego $5.950/mes con IVA incluido.</p>
                 </div>
                 <p className="text-sm font-medium text-zinc-700">¿Cómo describes tu negocio?</p>
                 <div className="grid grid-cols-1 gap-3">
@@ -154,7 +154,7 @@ export function RegistroModal({ fullWidth, variant }: { fullWidth?: boolean; var
                   <button onClick={() => setStep('tipo')} className="text-zinc-400 hover:text-zinc-600 text-sm">← Volver</button>
                   <div>
                     <h2 className="text-xl font-semibold text-zinc-900">Crear cuenta</h2>
-                    <p className="text-sm text-zinc-500">7 días gratis, luego $5.170/mes con IVA incluido.</p>
+                    <p className="text-sm text-zinc-500">7 días gratis, luego $5.950/mes con IVA incluido.</p>
                   </div>
                 </div>
 

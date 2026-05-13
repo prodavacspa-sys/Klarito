@@ -186,7 +186,7 @@ export default function Home() {
               <div className="space-y-1">
                 <div className="flex items-center gap-3 text-sm">
                   <span className="bg-emerald-950/10 text-emerald-950 font-semibold px-2 py-0.5 rounded-full">5 referidos</span>
-                  <span className="text-emerald-900">→ 50% descuento permanente ($2.585/mes)</span>
+                  <span className="text-emerald-900">→ 50% descuento permanente ($2.975/mes)</span>
                 </div>
                 <div className="flex items-center gap-3 text-sm">
                   <span className="bg-emerald-950/10 text-emerald-950 font-semibold px-2 py-0.5 rounded-full">10 referidos</span>
@@ -220,7 +220,7 @@ export default function Home() {
                 <span className="text-zinc-500 text-sm">+ IVA /mes</span>
               </div>
               <p className="text-xs text-zinc-400 mt-1">
-                $5.170 total con IVA
+                $5.950 total con IVA
               </p>
             </div>
 
