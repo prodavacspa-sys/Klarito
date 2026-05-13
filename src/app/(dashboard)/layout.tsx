@@ -12,7 +12,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const { data: profile } = await supabase
     .from('profiles')
     .select('subscription_status, flow_subscription_id, created_at')
-    .eq('id', user.id)
+    .eq('user_id', user.id)
     .single()
 
   const trialDaysLeft = profile?.flow_subscription_id
