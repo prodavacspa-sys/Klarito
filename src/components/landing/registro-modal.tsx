@@ -57,7 +57,7 @@ export function RegistroModal({ fullWidth, variant }: { fullWidth?: boolean; var
       metadata.rut_address = rutAddress
     }
 
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -69,6 +69,25 @@ export function RegistroModal({ fullWidth, variant }: { fullWidth?: boolean; var
     if (error) {
       setError(error.message)
     } else {
+      if (data?.user) {
+        await supabase.from('profiles').update({
+          first_name: firstName,
+          last_name: lastName,
+          phone,
+          address,
+          comuna,
+          business_name: businessName,
+          referred_by: refCode || null,
+          empresa_type: empresaType,
+          rut_empresa: rut || null,
+          giro: giro || null,
+          rut_address: rutAddress || null,
+        }).eq('user_id', data.user.id)
+
+        if (typeof window !== 'undefined' && (window as any).fbq) {
+          (window as any).fbq('track', 'Lead')
+        }
+      }
       setDone(true)
     }
     setLoading(false)

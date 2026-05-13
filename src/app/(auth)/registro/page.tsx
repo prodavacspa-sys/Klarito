@@ -24,6 +24,10 @@ export default function RegistroPage() {
     password: '',
     businessName: '',
     referralCode: '',
+    empresaType: 'natural' as 'natural' | 'formal',
+    rutEmpresa: '',
+    giro: '',
+    rutAddress: '',
   })
 
   useEffect(() => {
@@ -67,6 +71,10 @@ export default function RegistroPage() {
       comuna: form.comuna,
       business_name: form.businessName,
       referred_by: form.referralCode || null,
+      empresa_type: form.empresaType,
+      rut_empresa: form.rutEmpresa || null,
+      giro: form.giro || null,
+      rut_address: form.rutAddress || null,
     }).eq('user_id', data.user.id)
 
     if (typeof window !== 'undefined' && (window as any).fbq) {
@@ -137,6 +145,48 @@ export default function RegistroPage() {
                 <Label>Dirección</Label>
                 <Input placeholder="Av. Principal 123" value={form.address} onChange={e => handleField('address', e.target.value)} className="border-zinc-200" />
               </div>
+
+              {/* Tipo de negocio */}
+              <div className="space-y-2">
+                <Label>Tipo de negocio</Label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => handleField('empresaType', 'natural')}
+                    className={`p-3 rounded-lg border-2 text-left transition-colors ${form.empresaType === 'natural' ? 'border-zinc-900 bg-zinc-50' : 'border-zinc-200'}`}
+                  >
+                    <p className="text-sm font-medium">🛒 Informal</p>
+                    <p className="text-xs text-zinc-500">Sin boleta/factura</p>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleField('empresaType', 'formal')}
+                    className={`p-3 rounded-lg border-2 text-left transition-colors ${form.empresaType === 'formal' ? 'border-zinc-900 bg-zinc-50' : 'border-zinc-200'}`}
+                  >
+                    <p className="text-sm font-medium">🏢 Formal</p>
+                    <p className="text-xs text-zinc-500">Con RUT empresa</p>
+                  </button>
+                </div>
+              </div>
+
+              {form.empresaType === 'formal' && (
+                <div className="space-y-3 pt-2 border-t border-zinc-100">
+                  <p className="text-xs font-semibold text-zinc-500 uppercase tracking-wide">Datos de facturación</p>
+                  <div className="space-y-2">
+                    <Label>RUT empresa *</Label>
+                    <Input placeholder="76.123.456-7" value={form.rutEmpresa} onChange={e => handleField('rutEmpresa', e.target.value)} required={form.empresaType === 'formal'} className="border-zinc-200" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Giro *</Label>
+                    <Input placeholder="Comercio al por menor" value={form.giro} onChange={e => handleField('giro', e.target.value)} required={form.empresaType === 'formal'} className="border-zinc-200" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Dirección de facturación *</Label>
+                    <Input placeholder="Av. Comercio 456, Santiago" value={form.rutAddress} onChange={e => handleField('rutAddress', e.target.value)} required={form.empresaType === 'formal'} className="border-zinc-200" />
+                  </div>
+                </div>
+              )}
+
               <div className="space-y-2">
                 <Label>Correo electrónico *</Label>
                 <Input type="email" placeholder="tu@negocio.cl" value={form.email} onChange={e => handleField('email', e.target.value)} required className="border-zinc-200" />
