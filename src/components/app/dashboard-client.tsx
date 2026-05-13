@@ -51,32 +51,32 @@ export function DashboardClient({ businessName, ventasNetas, ivaDebito, ivaCredi
       </div>
 
       {/* Tarjetas resumen */}
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="bg-white border border-zinc-200 rounded-xl p-4">
           <p className="text-xs text-zinc-400">Ventas netas</p>
-          <p className="text-xl font-semibold tabular-nums text-emerald-600 mt-1">{fmt(ventasNetas)}</p>
+          <p className="text-xl md:text-2xl font-semibold tabular-nums text-emerald-600 mt-1 truncate">{fmt(ventasNetas)}</p>
           <p className="text-xs text-zinc-400 mt-0.5">sin IVA</p>
         </div>
         <div className="bg-white border border-zinc-200 rounded-xl p-4">
           <p className="text-xs text-zinc-400">Gastos fijos</p>
-          <p className="text-xl font-semibold tabular-nums text-rose-500 mt-1">{fmt(gastosFijos)}</p>
+          <p className="text-xl md:text-2xl font-semibold tabular-nums text-rose-500 mt-1 truncate">{fmt(gastosFijos)}</p>
           <p className="text-xs text-zinc-400 mt-0.5">arriendos, sueldos</p>
         </div>
         <div className="bg-white border border-zinc-200 rounded-xl p-4">
           <p className="text-xs text-zinc-400">Gastos variables</p>
-          <p className="text-xl font-semibold tabular-nums text-zinc-700 mt-1">{fmt(gastosVariables)}</p>
+          <p className="text-xl md:text-2xl font-semibold tabular-nums text-zinc-700 mt-1 truncate">{fmt(gastosVariables)}</p>
           <p className="text-xs text-zinc-400 mt-0.5">insumos, otros</p>
         </div>
         <div className={`rounded-xl p-4 border ${resultado >= 0 ? 'bg-emerald-50 border-emerald-100' : 'bg-rose-50 border-rose-100'}`}>
           <p className="text-xs text-zinc-400">Resultado neto</p>
-          <p className={`text-xl font-semibold tabular-nums mt-1 ${resultado >= 0 ? 'text-emerald-600' : 'text-rose-500'}`}>{fmt(resultado)}</p>
+          <p className={`text-xl md:text-2xl font-semibold tabular-nums mt-1 truncate ${resultado >= 0 ? 'text-emerald-600' : 'text-rose-500'}`}>{fmt(resultado)}</p>
           <p className="text-xs text-zinc-400 mt-0.5">{resultado >= 0 ? 'utilidad del mes' : 'pérdida del mes'}</p>
         </div>
       </div>
 
-      <div className="grid grid-cols-5 gap-6">
+      <div className="flex flex-col md:grid md:grid-cols-5 gap-6">
         {/* Velocímetro punto de equilibrio */}
-        <div className="col-span-2 bg-white border border-zinc-200 rounded-xl p-5">
+        <div className="md:col-span-2 bg-white border border-zinc-200 rounded-xl p-5">
           <div className="flex items-center justify-between mb-4">
             <div>
               <p className="text-sm font-medium text-zinc-900">Punto de equilibrio</p>
@@ -135,7 +135,7 @@ export function DashboardClient({ businessName, ventasNetas, ivaDebito, ivaCredi
         </div>
 
         {/* Gráfico de ventas del mes */}
-        <div className="col-span-3 bg-white border border-zinc-200 rounded-xl p-5">
+        <div className="md:col-span-3 bg-white border border-zinc-200 rounded-xl p-5">
           <div className="flex items-center justify-between mb-4">
             <div>
               <p className="text-sm font-medium text-zinc-900">Ventas del mes</p>

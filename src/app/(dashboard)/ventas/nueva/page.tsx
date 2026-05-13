@@ -137,9 +137,9 @@ export default function NuevaVentaPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-5 gap-6">
+      <div className="flex flex-col md:grid md:grid-cols-5 gap-6">
         {/* Buscador de productos */}
-        <div className="col-span-3 space-y-3">
+        <div className="md:col-span-3 space-y-3">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
             <Input
@@ -178,8 +178,8 @@ export default function NuevaVentaPage() {
         </div>
 
         {/* Carrito */}
-        <div className="col-span-2">
-          <div className="bg-white border border-zinc-200 rounded-xl overflow-hidden sticky top-6">
+        <div className="md:col-span-2">
+          <div className="bg-white border border-zinc-200 rounded-xl overflow-hidden md:sticky md:top-6">
             <div className="px-4 py-3 border-b border-zinc-100 flex items-center gap-2">
               <ShoppingCart className="h-4 w-4 text-zinc-400" />
               <span className="text-sm font-medium text-zinc-900">Carrito</span>
