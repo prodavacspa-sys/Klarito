@@ -135,9 +135,9 @@ export default function Home() {
               <span className="text-emerald-400">Klarito gratis.</span>
             </h2>
             <p className="text-emerald-200/70 max-w-md mx-auto text-base">
-              Cada emprendedor que invites y pague su primer mes te da{" "}
-              <strong className="text-emerald-300">$500 de descuento</strong>.
-              Con 10 referidos, tu suscripción es completamente gratis.
+              Invita emprendedores a Klarito y acumula referidos para obtener{" "}
+              <strong className="text-emerald-300">descuentos permanentes</strong>{" "}
+              en tu plan mensual.
             </p>
           </div>
 
@@ -147,19 +147,19 @@ export default function Home() {
                 icon: Share2,
                 step: "1",
                 title: "Comparte tu enlace",
-                desc: "Desde tu panel obtienes un enlace único de referido para compartir.",
+                desc: "Desde tu panel obtienes un enlace único de referido para compartir con otros emprendedores.",
               },
               {
                 icon: UserPlus,
                 step: "2",
-                title: "Tu amigo se registra",
-                desc: "Se crea una cuenta usando tu enlace y activa su suscripción.",
+                title: "Tu amigo se suscribe",
+                desc: "Se registra usando tu enlace y activa su cuenta con los 7 días de prueba gratis.",
               },
               {
                 icon: Banknote,
                 step: "3",
-                title: "Tú recibes $500",
-                desc: "El descuento se aplica automáticamente a tu próxima factura.",
+                title: "Acumulas descuentos",
+                desc: "Al llegar a 5 referidos pagas la mitad. Con 10 referidos, Klarito es completamente gratis.",
               },
             ].map(({ icon: Icon, step, title, desc }) => (
               <div
@@ -179,13 +179,20 @@ export default function Home() {
           </div>
 
           <div className="bg-emerald-400 rounded-2xl p-8 flex flex-col sm:flex-row items-center justify-between gap-6">
-            <div>
+            <div className="space-y-3">
               <p className="text-emerald-950 font-bold text-xl leading-tight">
-                10 referidos = servicio gratis
+                Descuentos por tramo
               </p>
-              <p className="text-emerald-800 text-sm mt-1">
-                $500 × 10 = $5.170 — exactamente el valor mensual de Klarito.
-              </p>
+              <div className="space-y-1">
+                <div className="flex items-center gap-3 text-sm">
+                  <span className="bg-emerald-950/10 text-emerald-950 font-semibold px-2 py-0.5 rounded-full">5 referidos</span>
+                  <span className="text-emerald-900">→ 50% descuento permanente ($2.585/mes)</span>
+                </div>
+                <div className="flex items-center gap-3 text-sm">
+                  <span className="bg-emerald-950/10 text-emerald-950 font-semibold px-2 py-0.5 rounded-full">10 referidos</span>
+                  <span className="text-emerald-900">→ 🎉 Plan gratuito permanente</span>
+                </div>
+              </div>
             </div>
             <RegistroModal variant="referral" />
           </div>
