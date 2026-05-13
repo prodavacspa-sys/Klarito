@@ -140,7 +140,30 @@ export default function ReferidosPage() {
             <Gift className="h-4 w-4 text-zinc-400" />
             Tu enlace de referido
           </CardTitle>
-          <CardDescription>Cada vez que alguien pague su primer mes usando tu enlace, recibes $500</CardDescription>
+          <CardDescription>
+            <div className="space-y-2">
+              <p className="text-sm text-zinc-500">
+                Invita a otros emprendedores a Klarito. Según cuántos se suscriban con tu enlace, obtienes descuentos permanentes en tu plan:
+              </p>
+              <div className="space-y-1 mt-2">
+                <div className="flex items-center gap-2 text-sm">
+                  <span className="text-zinc-400">0 → 4 referidos</span>
+                  <span className="text-zinc-400">—</span>
+                  <span className="text-zinc-500">Sin descuento</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm">
+                  <span className="font-medium text-amber-600">5 referidos</span>
+                  <span className="text-zinc-400">—</span>
+                  <span className="font-medium text-amber-600">50% descuento permanente ($2.585/mes)</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm">
+                  <span className="font-medium text-emerald-600">10 referidos</span>
+                  <span className="text-zinc-400">—</span>
+                  <span className="font-medium text-emerald-600">🎉 Plan gratuito permanente</span>
+                </div>
+              </div>
+            </div>
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="flex items-center gap-2 bg-zinc-50 border border-zinc-200 rounded-lg px-3 py-2.5">
