@@ -61,3 +61,7 @@ export async function GET(request: Request) {
 
   return Response.redirect(`${origin}/dashboard`)
 }
+
+export async function POST(request: Request) {
+  return GET(request)
+}
