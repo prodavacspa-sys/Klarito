@@ -18,7 +18,7 @@ type Expense = {
   id: string
   description: string
   expense_category: 'fijo' | 'variable'
-  expense_type: 'costo_variable_directo' | 'gasto_variable_indirecto' | 'gasto_fijo'
+  expense_type: 'gasto_variable_indirecto' | 'gasto_fijo'
   expense_subcategory: string
   document_type: 'factura' | 'boleta/otro'
   net_amount: number
@@ -29,12 +29,6 @@ type Expense = {
 }
 
 const CATEGORIAS = {
-  costo_variable_directo: [
-    'Ingredientes / Insumos',
-    'Packaging / Envases',
-    'Mano de obra directa',
-    'Otro',
-  ],
   gasto_variable_indirecto: [
     'Publicidad / Marketing',
     'Comisiones de venta',
@@ -55,14 +49,13 @@ const CATEGORIAS = {
 }
 
 const TIPO_LABELS = {
-  costo_variable_directo: { label: 'Costo Variable Directo', color: 'border-orange-200 text-orange-500 bg-orange-50', desc: 'Directamente ligado a tu producción' },
   gasto_variable_indirecto: { label: 'Gasto Variable Indirecto', color: 'border-zinc-200 text-zinc-500 bg-zinc-50', desc: 'No ligado directamente a producción' },
   gasto_fijo: { label: 'Gasto Fijo', color: 'border-rose-200 text-rose-500 bg-rose-50', desc: 'Se repite todos los meses' },
 }
 
 const emptyForm = {
   description: '',
-  expense_type: 'gasto_fijo' as 'costo_variable_directo' | 'gasto_variable_indirecto' | 'gasto_fijo',
+  expense_type: 'gasto_fijo' as 'gasto_variable_indirecto' | 'gasto_fijo',
   expense_subcategory: '',
   custom_subcategory: '',
   document_type: 'boleta/otro' as 'factura' | 'boleta/otro',
@@ -78,16 +71,24 @@ export default function GastosPage() {
   const [form, setForm] = useState(emptyForm)
   const [saving, setSaving] = useState(false)
   const [subscriptionStatus, setSubscriptionStatus] = useState<string>('inactive')
-  const [activeTab, setActiveTab] = useState<'todos' | 'costo_variable_directo' | 'gasto_variable_indirecto' | 'gasto_fijo'>('todos')
+  const [activeTab, setActiveTab] = useState<'todos' | 'gasto_variable_indirecto' | 'gasto_fijo'>('todos')
+  const [selectedMonth, setSelectedMonth] = useState(() => {
+    const now = new Date()
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+  })
   const router = useRouter()
 
-  useEffect(() => { fetchExpenses() }, [])
+  useEffect(() => { fetchExpenses() }, [selectedMonth])
 
   async function fetchExpenses() {
     setLoading(true)
+    const startDate = new Date(selectedMonth + '-01')
+    const endDate = new Date(startDate.getFullYear(), startDate.getMonth() + 1, 0, 23, 59, 59)
     const { data } = await supabase
       .from('expenses')
       .select('*')
+      .gte('created_at', startDate.toISOString())
+      .lte('created_at', endDate.toISOString())
       .order('created_at', { ascending: false })
       .limit(100)
     setExpenses(data ?? [])
@@ -162,7 +163,6 @@ export default function GastosPage() {
 
   const fmt = (n: number) => new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 }).format(n)
 
-  const totalCostoDirecto = expenses.filter(e => e.expense_type === 'costo_variable_directo').reduce((s, e) => s + e.total_amount, 0)
   const totalGastoIndirecto = expenses.filter(e => e.expense_type === 'gasto_variable_indirecto').reduce((s, e) => s + e.total_amount, 0)
   const totalGastoFijo = expenses.filter(e => e.expense_type === 'gasto_fijo').reduce((s, e) => s + e.total_amount, 0)
   const totalIvaCredito = expenses.filter(e => e.document_type === 'factura').reduce((s, e) => s + e.iva_amount, 0)
@@ -177,7 +177,13 @@ export default function GastosPage() {
           <h1 className="text-2xl font-semibold text-zinc-900">Costos y Gastos</h1>
           <p className="text-sm text-zinc-500 mt-1">{expenses.length} registros</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 items-center">
+          <input
+            type="month"
+            value={selectedMonth}
+            onChange={e => setSelectedMonth(e.target.value)}
+            className="border border-zinc-200 rounded-lg px-3 py-1.5 text-sm text-zinc-700 focus:outline-none focus:ring-2 focus:ring-zinc-900"
+          />
           <Button variant="outline" size="sm" onClick={exportExcel} className="border-zinc-200 text-zinc-600">
             <Download className="h-4 w-4 mr-2" />
             Excel
@@ -322,39 +328,24 @@ export default function GastosPage() {
         </div>
       </div>
 
-      {/* Resumen con distinción visual */}
-      <div className="space-y-3">
-        {/* Costos */}
-        <div className="bg-orange-50 border border-orange-100 rounded-xl p-4">
-          <p className="text-xs font-semibold text-orange-500 uppercase tracking-wide mb-3">Costos de Producción</p>
-          <div className="grid grid-cols-1 gap-3">
-            <div>
-              <p className="text-xs text-zinc-400">Costo Variable Directo</p>
-              <p className="text-xl font-semibold tabular-nums text-orange-500 mt-0.5">{fmt(totalCostoDirecto)}</p>
-              <p className="text-xs text-zinc-400">ingredientes, insumos, packaging</p>
-            </div>
+      {/* Resumen */}
+      <div className="bg-white border border-zinc-200 rounded-xl p-4">
+        <p className="text-xs font-semibold text-zinc-500 uppercase tracking-wide mb-3">Gastos del Negocio</p>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+          <div>
+            <p className="text-xs text-zinc-400">Gasto Variable Indirecto</p>
+            <p className="text-xl font-semibold tabular-nums text-zinc-700 mt-0.5">{fmt(totalGastoIndirecto)}</p>
+            <p className="text-xs text-zinc-400">publicidad, delivery</p>
           </div>
-        </div>
-
-        {/* Gastos */}
-        <div className="bg-white border border-zinc-200 rounded-xl p-4">
-          <p className="text-xs font-semibold text-zinc-500 uppercase tracking-wide mb-3">Gastos del Negocio</p>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-            <div>
-              <p className="text-xs text-zinc-400">Gasto Variable Indirecto</p>
-              <p className="text-xl font-semibold tabular-nums text-zinc-700 mt-0.5">{fmt(totalGastoIndirecto)}</p>
-              <p className="text-xs text-zinc-400">publicidad, delivery</p>
-            </div>
-            <div>
-              <p className="text-xs text-zinc-400">Gasto Fijo</p>
-              <p className="text-xl font-semibold tabular-nums text-rose-500 mt-0.5">{fmt(totalGastoFijo)}</p>
-              <p className="text-xs text-zinc-400">arriendo, sueldos</p>
-            </div>
-            <div>
-              <p className="text-xs text-zinc-400">IVA crédito fiscal</p>
-              <p className="text-xl font-semibold tabular-nums text-emerald-600 mt-0.5">{fmt(totalIvaCredito)}</p>
-              <p className="text-xs text-zinc-400">rebaja tu F29</p>
-            </div>
+          <div>
+            <p className="text-xs text-zinc-400">Gasto Fijo</p>
+            <p className="text-xl font-semibold tabular-nums text-rose-500 mt-0.5">{fmt(totalGastoFijo)}</p>
+            <p className="text-xs text-zinc-400">arriendo, sueldos</p>
+          </div>
+          <div>
+            <p className="text-xs text-zinc-400">IVA crédito fiscal</p>
+            <p className="text-xl font-semibold tabular-nums text-emerald-600 mt-0.5">{fmt(totalIvaCredito)}</p>
+            <p className="text-xs text-zinc-400">rebaja tu F29</p>
           </div>
         </div>
       </div>
@@ -363,7 +354,6 @@ export default function GastosPage() {
       <div className="flex gap-2 overflow-x-auto pb-1">
         {[
           { key: 'todos', label: 'Todos' },
-          { key: 'costo_variable_directo', label: 'Costo Variable Directo' },
           { key: 'gasto_variable_indirecto', label: 'Gasto Variable Indirecto' },
           { key: 'gasto_fijo', label: 'Gasto Fijo' },
         ].map(tab => (
