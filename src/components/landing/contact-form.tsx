@@ -1,14 +1,13 @@
 'use client'
 
 import { useState } from 'react'
-import { CheckCircle2, Loader2 } from 'lucide-react'
+import { Loader2 } from 'lucide-react'
 
 export function ContactForm() {
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [message, setMessage] = useState('')
   const [loading, setLoading] = useState(false)
-  const [done, setDone] = useState(false)
   const [error, setError] = useState('')
 
   async function handleSubmit(e: React.FormEvent) {
@@ -30,16 +29,6 @@ export function ContactForm() {
       setError(data.error ?? 'Error al enviar. Intenta de nuevo.')
     }
     setLoading(false)
-  }
-
-  if (done) {
-    return (
-      <div className="flex flex-col items-center gap-3 py-10 text-center">
-        <CheckCircle2 className="h-10 w-10 text-emerald-500" />
-        <p className="font-semibold text-zinc-900">Mensaje enviado</p>
-        <p className="text-sm text-zinc-500">Te responderemos a la brevedad.</p>
-      </div>
-    )
   }
 
   return (
