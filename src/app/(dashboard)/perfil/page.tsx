@@ -24,6 +24,9 @@ export default function PerfilPage() {
   const [applyingCoupon, setApplyingCoupon] = useState(false)
   const [flowSubscriptionId, setFlowSubscriptionId] = useState('')
   const [ppmRate, setPpmRate] = useState('0')
+  const [commissionDebit, setCommissionDebit] = useState('1.29')
+  const [commissionCredit, setCommissionCredit] = useState('3.19')
+  const [savingCommissions, setSavingCommissions] = useState(false)
 
   useEffect(() => { fetchProfile() }, [])
 
@@ -37,6 +40,8 @@ export default function PerfilPage() {
       setSubscriptionStatus(data.subscription_status)
       setFlowSubscriptionId(data.flow_subscription_id ?? '')
       setPpmRate(String(data.ppm_rate ?? 0))
+      if (data.commission_debit) setCommissionDebit(String(data.commission_debit))
+      if (data.commission_credit) setCommissionCredit(String(data.commission_credit))
     }
     setLoading(false)
   }
@@ -77,6 +82,19 @@ export default function PerfilPage() {
       toast.error('Error de conexión')
     }
     setApplyingCoupon(false)
+  }
+
+  async function saveCommissions() {
+    setSavingCommissions(true)
+    const { data: { user } } = await supabase.auth.getUser()
+    await supabase.from('profiles')
+      .update({
+        commission_debit: parseFloat(commissionDebit),
+        commission_credit: parseFloat(commissionCredit),
+      })
+      .eq('user_id', user!.id)
+    toast.success('Comisiones guardadas')
+    setSavingCommissions(false)
   }
 
   async function handlePasswordReset() {
@@ -302,6 +320,48 @@ export default function PerfilPage() {
           <p className="text-xs text-zinc-400">Consulta tu tasa con tu contador. Generalmente es entre 0.25% y 0.5% para Pymes.</p>
         </CardContent>
       </Card>
+    </div>
+      <div className="bg-white border border-zinc-200 rounded-xl p-6 space-y-4">
+        <div className="flex items-center gap-2">
+          <CreditCard className="h-4 w-4 text-zinc-400" />
+          <h2 className="text-sm font-semibold text-zinc-900">Comisiones de tarjeta</h2>
+        </div>
+        <p className="text-xs text-zinc-500">
+          Define el porcentaje de comisión que cobra tu procesador de pagos. Se sumará automáticamente al total cuando el cliente pague con tarjeta.
+        </p>
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label>Débito (%)</Label>
+            <div className="flex items-center gap-2">
+              <Input
+                type="number"
+                step="0.01"
+                value={commissionDebit}
+                onChange={e => setCommissionDebit(e.target.value)}
+                className="border-zinc-200 tabular-nums"
+              />
+              <span className="text-sm text-zinc-400">%</span>
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Label>Crédito (%)</Label>
+            <div className="flex items-center gap-2">
+              <Input
+                type="number"
+                step="0.01"
+                value={commissionCredit}
+                onChange={e => setCommissionCredit(e.target.value)}
+                className="border-zinc-200 tabular-nums"
+              />
+              <span className="text-sm text-zinc-400">%</span>
+            </div>
+          </div>
+        </div>
+        <p className="text-xs text-zinc-400">Las comisiones son + IVA y se suman al neto antes de calcular el IVA total.</p>
+        <Button onClick={saveCommissions} disabled={savingCommissions} className="bg-zinc-900 hover:bg-zinc-700 text-white">
+          {savingCommissions ? 'Guardando...' : 'Guardar comisiones'}
+        </Button>
+      </div>
     </div>
   )
 }

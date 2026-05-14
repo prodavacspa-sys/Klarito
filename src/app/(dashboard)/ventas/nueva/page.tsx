@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { toast } from 'sonner'
-import { Search, Plus, Minus, Trash2, ShoppingCart, CreditCard, Banknote, ArrowLeft } from 'lucide-react'
+import { Search, Plus, Minus, Trash2, ShoppingCart, CreditCard, Banknote, ArrowLeft, ArrowLeftRight } from 'lucide-react'
 import Link from 'next/link'
 
 type Product = { id: string; name: string; sale_price: number; stock: number }
@@ -22,17 +22,25 @@ export default function NuevaVentaPage() {
   const [products, setProducts] = useState<Product[]>([])
   const [search, setSearch] = useState('')
   const [cart, setCart] = useState<CartItem[]>([])
-  const [payMethod, setPayMethod] = useState<'efectivo' | 'tarjeta'>('efectivo')
+  const [payMethod, setPayMethod] = useState<'efectivo' | 'debito' | 'credito' | 'transferencia'>('efectivo')
   const [saving, setSaving] = useState(false)
   const [subscriptionStatus, setSubscriptionStatus] = useState('')
+  const [commissionDebit, setCommissionDebit] = useState(1.29)
+  const [commissionCredit, setCommissionCredit] = useState(3.19)
 
   useEffect(() => { fetchProducts(); fetchSubscription() }, [])
 
   async function fetchSubscription() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
-    const { data } = await supabase.from('profiles').select('subscription_status').eq('user_id', user.id).single()
-    if (data) setSubscriptionStatus(data.subscription_status)
+    const { data: profile } = await supabase.from('profiles')
+      .select('subscription_status, commission_debit, commission_credit')
+      .eq('user_id', user.id).single()
+    if (profile) {
+      setSubscriptionStatus(profile.subscription_status)
+      setCommissionDebit(profile.commission_debit ?? 1.29)
+      setCommissionCredit(profile.commission_credit ?? 3.19)
+    }
   }
 
   async function fetchProducts() {
@@ -74,9 +82,13 @@ export default function NuevaVentaPage() {
     setCart(prev => prev.filter(i => i.id !== id))
   }
 
-  const subtotal = cart.reduce((sum, i) => sum + Math.round(i.sale_price * 1.19) * i.quantity, 0)
-  const netAmount = Math.round(subtotal / (1 + IVA_RATE))
-  const ivaAmount = subtotal - netAmount
+  const commissionRate = payMethod === 'debito' ? commissionDebit : payMethod === 'credito' ? commissionCredit : 0
+  const cartNeto = cart.reduce((sum, i) => sum + i.sale_price * i.quantity, 0)
+  const commissionNeto = Math.round(cartNeto * commissionRate / 100)
+  const baseNeta = cartNeto + commissionNeto
+  const ivaAmount = Math.round(baseNeta * IVA_RATE)
+  const subtotal = baseNeta + ivaAmount
+  const netAmount = baseNeta
 
   async function handleConfirm() {
     if (cart.length === 0) { toast.error('El carrito está vacío'); return }
@@ -101,6 +113,9 @@ export default function NuevaVentaPage() {
         iva_amount: ivaAmount,
         total_amount: subtotal,
         notes: `Pago: ${payMethod}`,
+        payment_type: payMethod,
+        commission_rate: commissionRate,
+        commission_amount: commissionNeto,
       })
       .select()
       .single()
@@ -118,6 +133,22 @@ export default function NuevaVentaPage() {
     )
 
     if (itemsError) { toast.error('Error al guardar items'); setSaving(false); return }
+
+    if (commissionRate > 0 && commissionNeto > 0) {
+      const commissionIva = Math.round(commissionNeto * 0.19)
+      await supabase.from('expenses').insert({
+        user_id: user!.id,
+        description: `Comisión ${payMethod} — venta ${sale.id.slice(0, 8)}`,
+        expense_type: 'gasto_variable_indirecto',
+        expense_category: 'variable',
+        expense_subcategory: 'Comisiones de venta',
+        document_type: 'factura',
+        net_amount: commissionNeto,
+        iva_amount: commissionIva,
+        total_amount: commissionNeto + commissionIva,
+        is_recurring: false,
+      })
+    }
 
     toast.success(`Venta registrada — ${fmt(subtotal)}`)
     router.push('/ventas')
@@ -229,6 +260,12 @@ export default function NuevaVentaPage() {
                     <span>Neto</span>
                     <span className="tabular-nums">{fmt(netAmount)}</span>
                   </div>
+                  {commissionRate > 0 && commissionNeto > 0 && (
+                    <div className="flex justify-between text-xs text-zinc-400">
+                      <span>Comisión {payMethod} ({commissionRate}%)</span>
+                      <span className="tabular-nums">+{fmt(commissionNeto)}</span>
+                    </div>
+                  )}
                   <div className="flex justify-between text-xs text-zinc-400">
                     <span>IVA (19%)</span>
                     <span className="tabular-nums">{fmt(ivaAmount)}</span>
@@ -243,20 +280,23 @@ export default function NuevaVentaPage() {
                 <div className="px-4 pb-3 space-y-2">
                   <p className="text-xs text-zinc-400 font-medium">Medio de pago</p>
                   <div className="grid grid-cols-2 gap-2">
-                    <button
-                      onClick={() => setPayMethod('efectivo')}
-                      className={`flex items-center justify-center gap-1.5 py-2 rounded-lg border text-sm transition-colors ${payMethod === 'efectivo' ? 'border-zinc-900 bg-zinc-900 text-white' : 'border-zinc-200 text-zinc-500 hover:bg-zinc-50'}`}
-                    >
-                      <Banknote className="h-3.5 w-3.5" />
-                      Efectivo
-                    </button>
-                    <button
-                      onClick={() => setPayMethod('tarjeta')}
-                      className={`flex items-center justify-center gap-1.5 py-2 rounded-lg border text-sm transition-colors ${payMethod === 'tarjeta' ? 'border-zinc-900 bg-zinc-900 text-white' : 'border-zinc-200 text-zinc-500 hover:bg-zinc-50'}`}
-                    >
-                      <CreditCard className="h-3.5 w-3.5" />
-                      Tarjeta
-                    </button>
+                    {[
+                      { key: 'efectivo', label: 'Efectivo', icon: Banknote },
+                      { key: 'debito', label: 'Débito', icon: CreditCard },
+                      { key: 'credito', label: 'Crédito', icon: CreditCard },
+                      { key: 'transferencia', label: 'Transferencia', icon: ArrowLeftRight },
+                    ].map(({ key, label, icon: Icon }) => (
+                      <button
+                        key={key}
+                        onClick={() => setPayMethod(key as typeof payMethod)}
+                        className={`flex items-center justify-center gap-1.5 py-2 rounded-lg border text-sm transition-colors ${
+                          payMethod === key ? 'border-zinc-900 bg-zinc-900 text-white' : 'border-zinc-200 text-zinc-500 hover:bg-zinc-50'
+                        }`}
+                      >
+                        <Icon className="h-3.5 w-3.5" />
+                        {label}
+                      </button>
+                    ))}
                   </div>
 
                   <Button
