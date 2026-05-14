@@ -303,6 +303,11 @@ export default function InventarioPage() {
 
   const fmt = (n: number) => new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 }).format(n)
 
+  const recipeCost = recipe.reduce((sum, r) => {
+    const ing = ingredients.find(i => i.id === r.ingredient_id)
+    return sum + (ing?.cost_per_unit ?? 0) * (r.quantity || 0)
+  }, 0)
+
   const filtered = activeTab === 'todos' ? products : products.filter(p => p.product_type === activeTab)
 
   return (
@@ -490,14 +495,46 @@ export default function InventarioPage() {
 
                 {form.product_type !== 'ingredient' && (
                   <>
+                    {(form.product_type === 'manufactured' || form.product_type === 'service') && recipeCost > 0 && (
+                      <div className="bg-zinc-50 rounded-lg p-3">
+                        <p className="text-xs text-zinc-500">Costo de producción por unidad:</p>
+                        <p className="text-sm font-semibold text-zinc-900 mt-0.5">{fmt(recipeCost)}</p>
+                      </div>
+                    )}
                     <div className="grid grid-cols-2 gap-3">
                       <div className="space-y-2">
                         <Label>Margen (%)</Label>
-                        <Input type="number" placeholder="0" value={form.margin_percentage} onChange={e => handleField('margin_percentage', e.target.value)} className="border-zinc-200 tabular-nums" />
+                        <Input
+                          type="number"
+                          placeholder="0"
+                          value={form.margin_percentage}
+                          onChange={e => {
+                            const margin = parseFloat(e.target.value) || 0
+                            const cost = (form.product_type === 'manufactured' || form.product_type === 'service')
+                              ? recipeCost
+                              : parseFloat(form.cost_price) || 0
+                            const newPrice = cost > 0 && margin > 0 ? (cost * (1 + margin / 100)).toFixed(0) : form.sale_price
+                            setForm(f => ({ ...f, margin_percentage: e.target.value, sale_price: newPrice }))
+                          }}
+                          className="border-zinc-200 tabular-nums"
+                        />
                       </div>
                       <div className="space-y-2">
                         <Label>Precio venta (neto) *</Label>
-                        <Input type="number" placeholder="0" value={form.sale_price} onChange={e => handleField('sale_price', e.target.value)} className="border-zinc-200 tabular-nums" />
+                        <Input
+                          type="number"
+                          placeholder="0"
+                          value={form.sale_price}
+                          onChange={e => {
+                            const price = parseFloat(e.target.value) || 0
+                            const cost = (form.product_type === 'manufactured' || form.product_type === 'service')
+                              ? recipeCost
+                              : parseFloat(form.cost_price) || 0
+                            const newMargin = cost > 0 && price > 0 ? (((price / cost) - 1) * 100).toFixed(1) : form.margin_percentage
+                            setForm(f => ({ ...f, sale_price: e.target.value, margin_percentage: newMargin }))
+                          }}
+                          className="border-zinc-200 tabular-nums"
+                        />
                       </div>
                     </div>
                     <p className="text-xs text-zinc-400">El precio es neto (sin IVA). El IVA se calcula al registrar la venta.</p>
