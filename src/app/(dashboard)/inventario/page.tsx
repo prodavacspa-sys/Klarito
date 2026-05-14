@@ -535,6 +535,14 @@ export default function InventarioPage() {
                           }}
                           className="border-zinc-200 tabular-nums"
                         />
+                        {form.sale_price && parseFloat(form.sale_price) > 0 && (
+                          <div className="bg-emerald-50 border border-emerald-100 rounded-lg px-3 py-2 flex justify-between items-center">
+                            <span className="text-xs text-emerald-700">Precio con IVA (lo que paga el cliente):</span>
+                            <span className="text-sm font-semibold text-emerald-700">
+                              {fmt(Math.round(parseFloat(form.sale_price) * 1.19))}
+                            </span>
+                          </div>
+                        )}
                       </div>
                     </div>
                     <p className="text-xs text-zinc-400">El precio es neto (sin IVA). El IVA se calcula al registrar la venta.</p>

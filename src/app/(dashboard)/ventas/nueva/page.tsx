@@ -74,7 +74,7 @@ export default function NuevaVentaPage() {
     setCart(prev => prev.filter(i => i.id !== id))
   }
 
-  const subtotal = cart.reduce((sum, i) => sum + i.sale_price * i.quantity, 0)
+  const subtotal = cart.reduce((sum, i) => sum + Math.round(i.sale_price * 1.19) * i.quantity, 0)
   const netAmount = Math.round(subtotal / (1 + IVA_RATE))
   const ivaAmount = subtotal - netAmount
 
@@ -167,7 +167,8 @@ export default function NuevaVentaPage() {
                       <p className="text-xs text-zinc-400 mt-0.5">Stock: {p.stock} unidades</p>
                     </div>
                     <div className="flex items-center gap-3">
-                      <span className="text-sm font-medium tabular-nums text-emerald-600">{fmt(p.sale_price)}</span>
+                      <span className="text-sm font-medium tabular-nums text-emerald-600">{fmt(Math.round(p.sale_price * 1.19))}</span>
+                      <span className="text-xs text-zinc-400 tabular-nums">Neto: {fmt(p.sale_price)}</span>
                       <Button size="sm" variant="outline" className="h-7 w-7 p-0 border-zinc-200" onClick={() => addToCart(p)}>
                         <Plus className="h-3.5 w-3.5" />
                       </Button>
