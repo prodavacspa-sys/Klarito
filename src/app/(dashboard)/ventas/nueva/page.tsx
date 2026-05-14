@@ -112,8 +112,8 @@ export default function NuevaVentaPage() {
         sale_id: sale.id,
         product_id: i.id,
         quantity: i.quantity,
-        unit_price: i.sale_price,
-        subtotal: i.sale_price * i.quantity,
+        unit_price: Math.round(i.sale_price * 1.19),
+        subtotal: Math.round(i.sale_price * 1.19) * i.quantity,
       }))
     )
 
