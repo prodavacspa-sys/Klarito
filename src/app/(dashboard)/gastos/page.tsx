@@ -80,8 +80,9 @@ export default function GastosPage() {
 
   async function fetchExpenses() {
     setLoading(true)
-    const startDate = new Date(selectedMonth + '-01')
-    const endDate = new Date(startDate.getFullYear(), startDate.getMonth() + 1, 0, 23, 59, 59)
+    const [year, month] = selectedMonth.split('-').map(Number)
+    const startDate = new Date(Date.UTC(year, month - 1, 1, 0, 0, 0))
+    const endDate = new Date(Date.UTC(year, month, 0, 23, 59, 59))
     const { data } = await supabase
       .from('expenses')
       .select('*')
