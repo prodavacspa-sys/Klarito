@@ -291,14 +291,24 @@ export default function InventarioPage() {
     fetchAll()
   }
 
-  function exportCSV() {
-    const headers = ['Nombre', 'Tipo', 'Unidad', 'Costo', 'Precio Venta', 'Margen %', 'Stock']
-    const rows = products.map(p => [p.name, p.product_type, p.unit, p.cost_price, p.sale_price, p.margin_percentage, p.stock])
-    const csv = [headers, ...rows].map(r => r.join(',')).join('\n')
-    const blob = new Blob([csv], { type: 'text/csv' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url; a.download = 'inventario.csv'; a.click()
+  async function exportExcel() {
+    const XLSX = await import('xlsx')
+    const headers = ['Nombre', 'Tipo', 'Unidad', 'Costo', 'Precio Venta Neto', 'Precio con IVA', 'Margen %', 'Stock', 'Stock Mínimo']
+    const rows = products.map(p => [
+      p.name,
+      PRODUCT_TYPES[p.product_type as ProductType]?.label ?? p.product_type,
+      p.unit,
+      p.cost_price,
+      p.sale_price,
+      Math.round(p.sale_price * 1.19),
+      p.margin_percentage,
+      p.stock,
+      p.min_stock_alert
+    ])
+    const ws = XLSX.utils.aoa_to_sheet([headers, ...rows])
+    const wb = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(wb, ws, 'Inventario')
+    XLSX.writeFile(wb, 'inventario.xlsx')
   }
 
   const fmt = (n: number) => new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 }).format(n)
@@ -318,9 +328,9 @@ export default function InventarioPage() {
           <p className="text-sm text-zinc-500 mt-1">{products.length} productos activos</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={exportCSV} className="border-zinc-200 text-zinc-600">
+          <Button variant="outline" size="sm" onClick={exportExcel} className="border-zinc-200 text-zinc-600">
             <Download className="h-4 w-4 mr-2" />
-            CSV
+            Excel
           </Button>
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>

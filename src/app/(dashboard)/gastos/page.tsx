@@ -146,18 +146,18 @@ export default function GastosPage() {
     fetchExpenses()
   }
 
-  function exportCSV() {
+  async function exportExcel() {
+    const XLSX = await import('xlsx')
     const headers = ['Descripción', 'Tipo', 'Subcategoría', 'Documento', 'Neto', 'IVA', 'Total', 'Fecha']
     const rows = expenses.map(e => [
       e.description, e.expense_type, e.expense_subcategory, e.document_type,
       e.net_amount, e.iva_amount, e.total_amount,
       format(new Date(e.created_at), 'dd/MM/yyyy')
     ])
-    const csv = [headers, ...rows].map(r => r.join(',')).join('\n')
-    const blob = new Blob([csv], { type: 'text/csv' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url; a.download = 'gastos-costos.csv'; a.click()
+    const ws = XLSX.utils.aoa_to_sheet([headers, ...rows])
+    const wb = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(wb, ws, 'Gastos')
+    XLSX.writeFile(wb, 'gastos-costos.xlsx')
   }
 
   const fmt = (n: number) => new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 }).format(n)
@@ -178,9 +178,9 @@ export default function GastosPage() {
           <p className="text-sm text-zinc-500 mt-1">{expenses.length} registros</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={exportCSV} className="border-zinc-200 text-zinc-600">
+          <Button variant="outline" size="sm" onClick={exportExcel} className="border-zinc-200 text-zinc-600">
             <Download className="h-4 w-4 mr-2" />
-            Exportar CSV
+            Excel
           </Button>
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
