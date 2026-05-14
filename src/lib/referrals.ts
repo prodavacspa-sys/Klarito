@@ -119,7 +119,7 @@ export async function updateReferralDiscount(referrerUserId: string) {
     }
     // Crear nueva suscripción con plan 50%
     const newSub = await flowPost('/subscription/create', {
-      planId: 'Klarito2975',
+      planId: 'Klarito2585',
       customerId: profile.flow_customer_id,
       urlConfirmation: `${siteUrl}/api/flow/webhook`,
     })
