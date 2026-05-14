@@ -369,10 +369,52 @@ export default function InventarioPage() {
                 </div>
 
                 {form.product_type === 'ingredient' && (
-                  <div className="space-y-2">
-                    <Label>Costo por {form.unit} (neto, sin IVA) *</Label>
-                    <Input type="number" placeholder="0" value={form.cost_per_unit} onChange={e => setForm(f => ({ ...f, cost_per_unit: e.target.value }))} className="border-zinc-200 tabular-nums" />
-                    <p className="text-xs text-zinc-400">Este valor se usará para calcular el costo de recetas</p>
+                  <div className="space-y-3">
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-2">
+                        <Label>Costo total pagado ($) *</Label>
+                        <Input
+                          type="number"
+                          placeholder="ej: 5000"
+                          value={form.cost_price}
+                          onChange={e => {
+                            const totalPaid = parseFloat(e.target.value) || 0
+                            const qty = parseFloat(form.stock) || 1
+                            setForm(f => ({
+                              ...f,
+                              cost_price: e.target.value,
+                              cost_per_unit: qty > 0 ? (totalPaid / qty).toFixed(4) : '0'
+                            }))
+                          }}
+                          className="border-zinc-200 tabular-nums"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Cantidad comprada ({form.unit}) *</Label>
+                        <Input
+                          type="number"
+                          placeholder="ej: 500"
+                          value={form.stock}
+                          onChange={e => {
+                            const qty = parseFloat(e.target.value) || 1
+                            const totalPaid = parseFloat(form.cost_price) || 0
+                            setForm(f => ({
+                              ...f,
+                              stock: e.target.value,
+                              cost_per_unit: qty > 0 ? (totalPaid / qty).toFixed(4) : '0'
+                            }))
+                          }}
+                          className="border-zinc-200 tabular-nums"
+                        />
+                      </div>
+                    </div>
+                    {form.cost_per_unit && parseFloat(form.cost_per_unit) > 0 && (
+                      <div className="bg-zinc-50 rounded-lg p-3">
+                        <p className="text-xs text-zinc-500">Costo por {form.unit}:</p>
+                        <p className="text-sm font-semibold text-zinc-900">${parseFloat(form.cost_per_unit).toFixed(2)}</p>
+                        <p className="text-xs text-zinc-400 mt-0.5">Este valor se usará para calcular el costo de tus recetas</p>
+                      </div>
+                    )}
                   </div>
                 )}
 
