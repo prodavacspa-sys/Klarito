@@ -320,7 +320,6 @@ export default function PerfilPage() {
           <p className="text-xs text-zinc-400">Consulta tu tasa con tu contador. Generalmente es entre 0.25% y 0.5% para Pymes.</p>
         </CardContent>
       </Card>
-    </div>
       <div className="bg-white border border-zinc-200 rounded-xl p-6 space-y-4">
         <div className="flex items-center gap-2">
           <CreditCard className="h-4 w-4 text-zinc-400" />
