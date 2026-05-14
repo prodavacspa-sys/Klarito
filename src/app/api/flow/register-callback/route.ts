@@ -55,7 +55,8 @@ export async function GET(request: Request) {
     await supabase.from('profiles')
       .update({
         subscription_status: 'active',
-        flow_subscription_id: subscription.subscriptionId
+        flow_subscription_id: subscription.subscriptionId,
+        trial_started_at: new Date().toISOString(),
       })
       .eq('user_id', userId)
     return Response.redirect(`${siteUrl}/suscripcion/bienvenida`)
