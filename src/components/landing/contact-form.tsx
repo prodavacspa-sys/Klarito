@@ -21,7 +21,10 @@ export function ContactForm() {
       body: JSON.stringify({ name, email, message }),
     })
     if (res.ok) {
-      setDone(true)
+      if (typeof window !== 'undefined' && (window as any).fbq) {
+        (window as any).fbq('track', 'Contact')
+      }
+      window.location.href = '/contacto/gracias'
     } else {
       const data = await res.json()
       setError(data.error ?? 'Error al enviar. Intenta de nuevo.')
