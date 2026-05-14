@@ -31,9 +31,6 @@ type Expense = {
 const CATEGORIAS = {
   gasto_variable_indirecto: [
     'Publicidad / Marketing',
-    'Comisión débito',
-    'Comisión crédito',
-    'Comisión pasarela de pago',
     'Transporte / Delivery',
     'Materiales de oficina',
     'Otro',
@@ -71,7 +68,6 @@ export default function GastosPage() {
   const [open, setOpen] = useState(false)
   const [form, setForm] = useState(emptyForm)
   const [saving, setSaving] = useState(false)
-  const [commissionPercent, setCommissionPercent] = useState('')
   const [subscriptionStatus, setSubscriptionStatus] = useState<string>('inactive')
   const [activeTab, setActiveTab] = useState<'todos' | 'gasto_variable_indirecto' | 'gasto_fijo'>('todos')
   const [selectedMonth, setSelectedMonth] = useState(() => {
@@ -109,12 +105,10 @@ export default function GastosPage() {
 
   const subcategorias = CATEGORIAS[form.expense_type]
   const isOtro = form.expense_subcategory === 'Otro'
-  const isCommission = form.expense_subcategory?.startsWith('Comisión')
 
   async function handleSave() {
     if (!form.expense_subcategory) { toast.error('Selecciona una categoría'); return }
-    if (isCommission && !commissionPercent) { toast.error('Ingresa el porcentaje de comisión'); return }
-    if (!isCommission && (!form.description || !form.total_amount)) {
+    if (!form.description || !form.total_amount) {
       toast.error('Completa todos los campos obligatorios')
       return
     }
@@ -125,25 +119,21 @@ export default function GastosPage() {
     setSaving(true)
     const { data: { user } } = await supabase.auth.getUser()
     const finalSubcategory = isOtro && form.custom_subcategory ? form.custom_subcategory : form.expense_subcategory
-    const finalDescription = isCommission
-      ? `${form.expense_subcategory} — ${commissionPercent}%`
-      : form.description
     const { error } = await supabase.from('expenses').insert({
       user_id: user!.id,
-      description: finalDescription,
+      description: form.description,
       expense_type: form.expense_type,
       expense_category: form.expense_type === 'gasto_fijo' ? 'fijo' : 'variable',
       expense_subcategory: finalSubcategory,
-      document_type: isCommission ? 'factura' : form.document_type,
-      net_amount: isCommission ? 0 : netAmount,
-      iva_amount: isCommission ? 0 : ivaAmount,
-      total_amount: isCommission ? 0 : total,
+      document_type: form.document_type,
+      net_amount: netAmount,
+      iva_amount: ivaAmount,
+      total_amount: total,
       is_recurring: form.expense_type === 'gasto_fijo' ? form.is_recurring : false,
     })
     if (error) { toast.error('Error al registrar'); setSaving(false); return }
     toast.success('Registrado correctamente')
     setForm(emptyForm)
-    setCommissionPercent('')
     setOpen(false)
     setSaving(false)
     fetchExpenses()
@@ -180,13 +170,12 @@ export default function GastosPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="space-y-3">
         <div>
           <h1 className="text-2xl font-semibold text-zinc-900">Costos y Gastos</h1>
           <p className="text-sm text-zinc-500 mt-1">{expenses.length} registros</p>
         </div>
-        <div className="flex gap-2 items-center">
+        <div className="flex flex-wrap gap-2 items-center">
           <input
             type="month"
             value={selectedMonth}
@@ -197,7 +186,7 @@ export default function GastosPage() {
             <Download className="h-4 w-4 mr-2" />
             Excel
           </Button>
-          <Dialog open={open} onOpenChange={v => { setOpen(v); if (!v) setCommissionPercent('') }}>
+          <Dialog open={open} onOpenChange={v => { setOpen(v) }}>
             <DialogTrigger asChild>
               <Button size="sm" className="bg-zinc-900 hover:bg-zinc-700 text-white">
                 <Plus className="h-4 w-4 mr-2" />
@@ -209,8 +198,6 @@ export default function GastosPage() {
                 <DialogTitle>Registrar costo o gasto</DialogTitle>
               </DialogHeader>
               <div className="space-y-4 py-2">
-
-                {/* Selector tipo con distinción visual */}
                 <div className="space-y-2">
                   <Label>Tipo *</Label>
                   <div className="grid grid-cols-1 gap-2">
@@ -231,8 +218,6 @@ export default function GastosPage() {
                     ))}
                   </div>
                 </div>
-
-                {/* Subcategoría */}
                 <div className="space-y-2">
                   <Label>Categoría *</Label>
                   <Select value={form.expense_subcategory} onValueChange={v => setForm(f => ({ ...f, expense_subcategory: v }))}>
@@ -254,37 +239,15 @@ export default function GastosPage() {
                     />
                   )}
                 </div>
-
-                {isCommission && (
-                  <div className="space-y-2">
-                    <Label>Porcentaje de comisión (%)</Label>
-                    <div className="flex items-center gap-2">
-                      <Input
-                        type="number"
-                        step="0.01"
-                        placeholder="ej: 1.29"
-                        value={commissionPercent}
-                        onChange={e => setCommissionPercent(e.target.value)}
-                        className="border-zinc-200 tabular-nums"
-                      />
-                      <span className="text-sm text-zinc-400">%</span>
-                    </div>
-                    <p className="text-xs text-zinc-400">El monto se calcula automáticamente en cada venta con tarjeta.</p>
-                  </div>
-                )}
-
-                {/* Descripción */}
                 <div className="space-y-2">
                   <Label>Descripción *</Label>
                   <Input
-                    placeholder="Ej: Harina para pan"
+                    placeholder="Ej: Arriendo local enero"
                     value={form.description}
                     onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
                     className="border-zinc-200"
                   />
                 </div>
-
-                {/* Documento */}
                 <div className="space-y-2">
                   <Label>Tipo de documento</Label>
                   <Select value={form.document_type} onValueChange={v => setForm(f => ({ ...f, document_type: v as 'factura' | 'boleta/otro' }))}>
@@ -297,8 +260,6 @@ export default function GastosPage() {
                     </SelectContent>
                   </Select>
                 </div>
-
-                {/* Repetir mensual solo para gastos fijos */}
                 {form.expense_type === 'gasto_fijo' && (
                   <div className="flex items-center gap-3 bg-zinc-50 rounded-lg px-3 py-2.5">
                     <input
@@ -316,9 +277,6 @@ export default function GastosPage() {
                     </div>
                   </div>
                 )}
-
-                {/* Monto — oculto para comisiones */}
-                {!isCommission && (
                 <div className="space-y-2">
                   <Label>Monto total ($) *</Label>
                   <Input
@@ -329,9 +287,7 @@ export default function GastosPage() {
                     className="border-zinc-200 tabular-nums"
                   />
                 </div>
-                )}
-
-                {!isCommission && form.total_amount && (
+                {form.total_amount && (
                   <div className="bg-zinc-50 rounded-lg p-3 space-y-1.5">
                     <div className="flex justify-between text-xs text-zinc-500">
                       <span>Neto</span>
@@ -347,7 +303,6 @@ export default function GastosPage() {
                     </div>
                   </div>
                 )}
-
                 <Button onClick={handleSave} disabled={saving} className="w-full bg-zinc-900 hover:bg-zinc-700 text-white">
                   {saving ? 'Guardando...' : 'Registrar'}
                 </Button>
@@ -357,7 +312,6 @@ export default function GastosPage() {
         </div>
       </div>
 
-      {/* Resumen */}
       <div className="bg-white border border-zinc-200 rounded-xl p-4">
         <p className="text-xs font-semibold text-zinc-500 uppercase tracking-wide mb-3">Gastos del Negocio</p>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
@@ -379,7 +333,6 @@ export default function GastosPage() {
         </div>
       </div>
 
-      {/* Tabs filtro */}
       <div className="flex gap-2 overflow-x-auto pb-1">
         {[
           { key: 'todos', label: 'Todos' },
@@ -398,7 +351,6 @@ export default function GastosPage() {
         ))}
       </div>
 
-      {/* Lista */}
       <div className="bg-white border border-zinc-200 rounded-xl overflow-hidden">
         {loading ? (
           <div className="p-8 text-center text-zinc-400 text-sm">Cargando...</div>
