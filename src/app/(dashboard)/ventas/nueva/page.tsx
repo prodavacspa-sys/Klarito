@@ -11,7 +11,7 @@ import { toast } from 'sonner'
 import { Search, Plus, Minus, Trash2, ShoppingCart, CreditCard, Banknote, ArrowLeft, ArrowLeftRight } from 'lucide-react'
 import Link from 'next/link'
 
-type Product = { id: string; name: string; sale_price: number; stock: number }
+type Product = { id: string; name: string; sale_price: number; stock: number; product_type: string }
 type CartItem = Product & { quantity: number }
 
 const IVA_RATE = 0.19
@@ -25,8 +25,8 @@ export default function NuevaVentaPage() {
   const [payMethod, setPayMethod] = useState<'efectivo' | 'debito' | 'credito' | 'transferencia'>('efectivo')
   const [saving, setSaving] = useState(false)
   const [subscriptionStatus, setSubscriptionStatus] = useState('')
-  const [commissionDebit, setCommissionDebit] = useState(0)
-  const [commissionCredit, setCommissionCredit] = useState(0)
+  const [commissionDebit, setCommissionDebit] = useState<number>(0)
+  const [commissionCredit, setCommissionCredit] = useState<number>(0)
   const [hasDelivery, setHasDelivery] = useState(false)
   const [deliveryAmount, setDeliveryAmount] = useState('')
 
@@ -36,37 +36,21 @@ export default function NuevaVentaPage() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
     const { data: profile } = await supabase.from('profiles')
-      .select('subscription_status')
+      .select('subscription_status, commission_debit, commission_credit')
       .eq('user_id', user.id).single()
-    if (profile) setSubscriptionStatus(profile.subscription_status)
-
-    const { data: commissions } = await supabase
-      .from('expenses')
-      .select('expense_subcategory, description')
-      .eq('user_id', user.id)
-      .eq('expense_type', 'gasto_variable_indirecto')
-      .ilike('description', 'Comisión%')
-
-    const debitCommission = commissions?.find(c => c.description?.toLowerCase().includes('débito'))
-    const creditCommission = commissions?.find(c => c.description?.toLowerCase().includes('crédito'))
-
-    const debitRate = debitCommission
-      ? parseFloat(debitCommission.description?.match(/(\d+\.?\d*)%/)?.[1] ?? '0')
-      : 0
-    const creditRate = creditCommission
-      ? parseFloat(creditCommission.description?.match(/(\d+\.?\d*)%/)?.[1] ?? '0')
-      : 0
-
-    setCommissionDebit(debitRate)
-    setCommissionCredit(creditRate)
+    if (profile) {
+      setSubscriptionStatus(profile.subscription_status)
+      setCommissionDebit(parseFloat(profile.commission_debit) || 0)
+      setCommissionCredit(parseFloat(profile.commission_credit) || 0)
+    }
   }
 
   async function fetchProducts() {
     const { data } = await supabase
       .from('products')
-      .select('id, name, sale_price, stock')
+      .select('id, name, sale_price, stock, product_type')
       .eq('is_active', true)
-      .gt('stock', 0)
+      .not('product_type', 'eq', 'ingredient')
       .order('name')
     setProducts(data ?? [])
   }
@@ -79,10 +63,6 @@ export default function NuevaVentaPage() {
     setCart(prev => {
       const existing = prev.find(i => i.id === p.id)
       if (existing) {
-        if (existing.quantity >= p.stock) {
-          toast.error('Stock insuficiente')
-          return prev
-        }
         return prev.map(i => i.id === p.id ? { ...i, quantity: i.quantity + 1 } : i)
       }
       return [...prev, { ...p, quantity: 1 }]
@@ -185,6 +165,14 @@ export default function NuevaVentaPage() {
       })
     }
 
+    for (const item of cart) {
+      if (item.product_type !== 'service') {
+        await supabase.from('products')
+          .update({ stock: Math.max(0, item.stock - item.quantity) })
+          .eq('id', item.id)
+      }
+    }
+
     toast.success(`Venta registrada — ${fmt(subtotal)}`)
     setHasDelivery(false)
     setDeliveryAmount('')
@@ -208,7 +196,6 @@ export default function NuevaVentaPage() {
       </div>
 
       <div className="flex flex-col md:grid md:grid-cols-5 gap-6">
-        {/* Buscador de productos */}
         <div className="md:col-span-3 space-y-3">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
@@ -224,7 +211,7 @@ export default function NuevaVentaPage() {
           <div className="bg-white border border-zinc-200 rounded-xl overflow-hidden">
             {filtered.length === 0 ? (
               <div className="p-8 text-center text-zinc-400 text-sm">
-                {search ? 'No se encontraron productos' : 'No hay productos con stock disponible'}
+                {search ? 'No se encontraron productos' : 'No hay productos disponibles'}
               </div>
             ) : (
               <div className="divide-y divide-zinc-100">
@@ -232,7 +219,9 @@ export default function NuevaVentaPage() {
                   <div key={p.id} className="flex items-center justify-between px-4 py-3 hover:bg-zinc-50 transition-colors">
                     <div>
                       <p className="text-sm font-medium text-zinc-900">{p.name}</p>
-                      <p className="text-xs text-zinc-400 mt-0.5">Stock: {p.stock} unidades</p>
+                      <p className="text-xs text-zinc-400 mt-0.5">
+                        {p.product_type === 'service' ? 'Servicio' : `Stock: ${p.stock} unidades`}
+                      </p>
                     </div>
                     <div className="flex items-center gap-3">
                       <span className="text-sm font-medium tabular-nums text-emerald-600">{fmt(Math.round(p.sale_price * 1.19))}</span>
@@ -248,7 +237,6 @@ export default function NuevaVentaPage() {
           </div>
         </div>
 
-        {/* Carrito */}
         <div className="md:col-span-2">
           <div className="bg-white border border-zinc-200 rounded-xl overflow-hidden md:sticky md:top-6">
             <div className="px-4 py-3 border-b border-zinc-100 flex items-center gap-2">
@@ -282,7 +270,7 @@ export default function NuevaVentaPage() {
                             <Minus className="h-3 w-3" />
                           </button>
                           <span className="text-sm tabular-nums w-6 text-center">{item.quantity}</span>
-                          <button onClick={() => updateQty(item.id, 1)} disabled={item.quantity >= item.stock} className="h-6 w-6 rounded border border-zinc-200 flex items-center justify-center hover:bg-zinc-50 disabled:opacity-40">
+                          <button onClick={() => updateQty(item.id, 1)} className="h-6 w-6 rounded border border-zinc-200 flex items-center justify-center hover:bg-zinc-50">
                             <Plus className="h-3 w-3" />
                           </button>
                         </div>
@@ -345,7 +333,7 @@ export default function NuevaVentaPage() {
                   {(payMethod === 'debito' || payMethod === 'credito') && commissionRate === 0 && (
                     <p className="text-xs text-amber-500">
                       No tienes comisión de {payMethod} configurada.{' '}
-                      <a href="/gastos" className="underline">Agrégala en Gastos</a>
+                      <a href="/perfil" className="underline">Configúrala en Perfil</a>
                     </p>
                   )}
 
