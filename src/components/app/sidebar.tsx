@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { LayoutDashboard, Package, ShoppingCart, Receipt, LogOut, User, Gift, Menu, X } from 'lucide-react'
+import { LayoutDashboard, Package, ShoppingCart, Receipt, LogOut, Settings, Gift, Menu, X } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { createClient } from '@/lib/supabase/client'
 import { toast } from 'sonner'
@@ -13,7 +13,7 @@ const navItems = [
   { href: '/inventario', label: 'Inventario', Icon: Package },
   { href: '/ventas', label: 'Ventas', Icon: ShoppingCart },
   { href: '/gastos', label: 'Gastos', Icon: Receipt },
-  { href: '/perfil', label: 'Perfil', Icon: User },
+  { href: '/perfil', label: 'Configuración', Icon: Settings },
   { href: '/referidos', label: 'Referidos', Icon: Gift },
 ]
 
@@ -22,7 +22,7 @@ const bottomNavItems = [
   { href: '/ventas', label: 'Ventas', Icon: ShoppingCart },
   { href: '/gastos', label: 'Gastos', Icon: Receipt },
   { href: '/inventario', label: 'Inventario', Icon: Package },
-  { href: '/perfil', label: 'Perfil', Icon: User },
+  { href: '/perfil', label: 'Config.', Icon: Settings },
 ]
 
 interface SidebarProps {
