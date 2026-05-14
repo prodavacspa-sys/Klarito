@@ -25,8 +25,10 @@ export default function NuevaVentaPage() {
   const [payMethod, setPayMethod] = useState<'efectivo' | 'debito' | 'credito' | 'transferencia'>('efectivo')
   const [saving, setSaving] = useState(false)
   const [subscriptionStatus, setSubscriptionStatus] = useState('')
-  const [commissionDebit, setCommissionDebit] = useState(1.29)
-  const [commissionCredit, setCommissionCredit] = useState(3.19)
+  const [commissionDebit, setCommissionDebit] = useState(0)
+  const [commissionCredit, setCommissionCredit] = useState(0)
+  const [hasDelivery, setHasDelivery] = useState(false)
+  const [deliveryAmount, setDeliveryAmount] = useState('')
 
   useEffect(() => { fetchProducts(); fetchSubscription() }, [])
 
@@ -34,13 +36,29 @@ export default function NuevaVentaPage() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
     const { data: profile } = await supabase.from('profiles')
-      .select('subscription_status, commission_debit, commission_credit')
+      .select('subscription_status')
       .eq('user_id', user.id).single()
-    if (profile) {
-      setSubscriptionStatus(profile.subscription_status)
-      setCommissionDebit(profile.commission_debit ?? 1.29)
-      setCommissionCredit(profile.commission_credit ?? 3.19)
-    }
+    if (profile) setSubscriptionStatus(profile.subscription_status)
+
+    const { data: commissions } = await supabase
+      .from('expenses')
+      .select('expense_subcategory, description')
+      .eq('user_id', user.id)
+      .eq('expense_type', 'gasto_variable_indirecto')
+      .ilike('description', 'Comisión%')
+
+    const debitCommission = commissions?.find(c => c.description?.toLowerCase().includes('débito'))
+    const creditCommission = commissions?.find(c => c.description?.toLowerCase().includes('crédito'))
+
+    const debitRate = debitCommission
+      ? parseFloat(debitCommission.description?.match(/(\d+\.?\d*)%/)?.[1] ?? '0')
+      : 0
+    const creditRate = creditCommission
+      ? parseFloat(creditCommission.description?.match(/(\d+\.?\d*)%/)?.[1] ?? '0')
+      : 0
+
+    setCommissionDebit(debitRate)
+    setCommissionCredit(creditRate)
   }
 
   async function fetchProducts() {
@@ -82,10 +100,11 @@ export default function NuevaVentaPage() {
     setCart(prev => prev.filter(i => i.id !== id))
   }
 
+  const deliveryCost = hasDelivery ? (parseFloat(deliveryAmount) || 0) : 0
   const commissionRate = payMethod === 'debito' ? commissionDebit : payMethod === 'credito' ? commissionCredit : 0
   const cartNeto = cart.reduce((sum, i) => sum + i.sale_price * i.quantity, 0)
   const commissionNeto = Math.round(cartNeto * commissionRate / 100)
-  const baseNeta = cartNeto + commissionNeto
+  const baseNeta = cartNeto + commissionNeto + deliveryCost
   const ivaAmount = Math.round(baseNeta * IVA_RATE)
   const subtotal = baseNeta + ivaAmount
   const netAmount = baseNeta
@@ -141,7 +160,7 @@ export default function NuevaVentaPage() {
         description: `Comisión ${payMethod} — venta ${sale.id.slice(0, 8)}`,
         expense_type: 'gasto_variable_indirecto',
         expense_category: 'variable',
-        expense_subcategory: 'Comisiones de venta',
+        expense_subcategory: payMethod === 'debito' ? 'Comisión débito' : 'Comisión crédito',
         document_type: 'factura',
         net_amount: commissionNeto,
         iva_amount: commissionIva,
@@ -150,7 +169,25 @@ export default function NuevaVentaPage() {
       })
     }
 
+    if (hasDelivery && deliveryCost > 0) {
+      const deliveryIva = Math.round(deliveryCost * 0.19)
+      await supabase.from('expenses').insert({
+        user_id: user!.id,
+        description: `Delivery — venta ${sale.id.slice(0, 8)}`,
+        expense_type: 'gasto_variable_indirecto',
+        expense_category: 'variable',
+        expense_subcategory: 'Transporte / Delivery',
+        document_type: 'boleta/otro',
+        net_amount: deliveryCost,
+        iva_amount: deliveryIva,
+        total_amount: deliveryCost + deliveryIva,
+        is_recurring: false,
+      })
+    }
+
     toast.success(`Venta registrada — ${fmt(subtotal)}`)
+    setHasDelivery(false)
+    setDeliveryAmount('')
     router.push('/ventas')
   }
 
@@ -266,6 +303,12 @@ export default function NuevaVentaPage() {
                       <span className="tabular-nums">+{fmt(commissionNeto)}</span>
                     </div>
                   )}
+                  {hasDelivery && deliveryCost > 0 && (
+                    <div className="flex justify-between text-xs text-zinc-400">
+                      <span>Delivery</span>
+                      <span className="tabular-nums">+{fmt(deliveryCost)}</span>
+                    </div>
+                  )}
                   <div className="flex justify-between text-xs text-zinc-400">
                     <span>IVA (19%)</span>
                     <span className="tabular-nums">{fmt(ivaAmount)}</span>
@@ -298,6 +341,36 @@ export default function NuevaVentaPage() {
                       </button>
                     ))}
                   </div>
+
+                  {(payMethod === 'debito' || payMethod === 'credito') && commissionRate === 0 && (
+                    <p className="text-xs text-amber-500">
+                      No tienes comisión de {payMethod} configurada.{' '}
+                      <a href="/gastos" className="underline">Agrégala en Gastos</a>
+                    </p>
+                  )}
+
+                  <div className="flex items-center gap-3 py-2">
+                    <input
+                      type="checkbox"
+                      id="has_delivery"
+                      checked={hasDelivery}
+                      onChange={e => { setHasDelivery(e.target.checked); if (!e.target.checked) setDeliveryAmount('') }}
+                      className="h-4 w-4 rounded border-zinc-300 accent-zinc-900 cursor-pointer"
+                    />
+                    <label htmlFor="has_delivery" className="text-sm text-zinc-700 cursor-pointer">¿Incluye delivery?</label>
+                  </div>
+                  {hasDelivery && (
+                    <div className="space-y-1.5">
+                      <p className="text-xs text-zinc-500">Costo delivery (neto, sin IVA)</p>
+                      <Input
+                        type="number"
+                        placeholder="0"
+                        value={deliveryAmount}
+                        onChange={e => setDeliveryAmount(e.target.value)}
+                        className="border-zinc-200 tabular-nums h-8 text-sm"
+                      />
+                    </div>
+                  )}
 
                   <Button
                     className="w-full bg-zinc-900 hover:bg-zinc-700 text-white mt-1"

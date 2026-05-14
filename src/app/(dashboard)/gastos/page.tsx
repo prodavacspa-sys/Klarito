@@ -31,9 +31,10 @@ type Expense = {
 const CATEGORIAS = {
   gasto_variable_indirecto: [
     'Publicidad / Marketing',
-    'Comisiones de venta',
+    'Comisión débito',
+    'Comisión crédito',
+    'Comisión pasarela de pago',
     'Transporte / Delivery',
-    'Plataformas de pago',
     'Materiales de oficina',
     'Otro',
   ],
@@ -70,6 +71,7 @@ export default function GastosPage() {
   const [open, setOpen] = useState(false)
   const [form, setForm] = useState(emptyForm)
   const [saving, setSaving] = useState(false)
+  const [commissionPercent, setCommissionPercent] = useState('')
   const [subscriptionStatus, setSubscriptionStatus] = useState<string>('inactive')
   const [activeTab, setActiveTab] = useState<'todos' | 'gasto_variable_indirecto' | 'gasto_fijo'>('todos')
   const [selectedMonth, setSelectedMonth] = useState(() => {
@@ -107,9 +109,12 @@ export default function GastosPage() {
 
   const subcategorias = CATEGORIAS[form.expense_type]
   const isOtro = form.expense_subcategory === 'Otro'
+  const isCommission = form.expense_subcategory?.startsWith('Comisión')
 
   async function handleSave() {
-    if (!form.description || !form.total_amount || !form.expense_subcategory) {
+    if (!form.expense_subcategory) { toast.error('Selecciona una categoría'); return }
+    if (isCommission && !commissionPercent) { toast.error('Ingresa el porcentaje de comisión'); return }
+    if (!isCommission && (!form.description || !form.total_amount)) {
       toast.error('Completa todos los campos obligatorios')
       return
     }
@@ -120,21 +125,25 @@ export default function GastosPage() {
     setSaving(true)
     const { data: { user } } = await supabase.auth.getUser()
     const finalSubcategory = isOtro && form.custom_subcategory ? form.custom_subcategory : form.expense_subcategory
+    const finalDescription = isCommission
+      ? `${form.expense_subcategory} — ${commissionPercent}%`
+      : form.description
     const { error } = await supabase.from('expenses').insert({
       user_id: user!.id,
-      description: form.description,
+      description: finalDescription,
       expense_type: form.expense_type,
       expense_category: form.expense_type === 'gasto_fijo' ? 'fijo' : 'variable',
       expense_subcategory: finalSubcategory,
-      document_type: form.document_type,
-      net_amount: netAmount,
-      iva_amount: ivaAmount,
-      total_amount: total,
+      document_type: isCommission ? 'factura' : form.document_type,
+      net_amount: isCommission ? 0 : netAmount,
+      iva_amount: isCommission ? 0 : ivaAmount,
+      total_amount: isCommission ? 0 : total,
       is_recurring: form.expense_type === 'gasto_fijo' ? form.is_recurring : false,
     })
     if (error) { toast.error('Error al registrar'); setSaving(false); return }
     toast.success('Registrado correctamente')
     setForm(emptyForm)
+    setCommissionPercent('')
     setOpen(false)
     setSaving(false)
     fetchExpenses()
@@ -188,7 +197,7 @@ export default function GastosPage() {
             <Download className="h-4 w-4 mr-2" />
             Excel
           </Button>
-          <Dialog open={open} onOpenChange={setOpen}>
+          <Dialog open={open} onOpenChange={v => { setOpen(v); if (!v) setCommissionPercent('') }}>
             <DialogTrigger asChild>
               <Button size="sm" className="bg-zinc-900 hover:bg-zinc-700 text-white">
                 <Plus className="h-4 w-4 mr-2" />
@@ -246,6 +255,24 @@ export default function GastosPage() {
                   )}
                 </div>
 
+                {isCommission && (
+                  <div className="space-y-2">
+                    <Label>Porcentaje de comisión (%)</Label>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="number"
+                        step="0.01"
+                        placeholder="ej: 1.29"
+                        value={commissionPercent}
+                        onChange={e => setCommissionPercent(e.target.value)}
+                        className="border-zinc-200 tabular-nums"
+                      />
+                      <span className="text-sm text-zinc-400">%</span>
+                    </div>
+                    <p className="text-xs text-zinc-400">El monto se calcula automáticamente en cada venta con tarjeta.</p>
+                  </div>
+                )}
+
                 {/* Descripción */}
                 <div className="space-y-2">
                   <Label>Descripción *</Label>
@@ -290,7 +317,8 @@ export default function GastosPage() {
                   </div>
                 )}
 
-                {/* Monto */}
+                {/* Monto — oculto para comisiones */}
+                {!isCommission && (
                 <div className="space-y-2">
                   <Label>Monto total ($) *</Label>
                   <Input
@@ -301,8 +329,9 @@ export default function GastosPage() {
                     className="border-zinc-200 tabular-nums"
                   />
                 </div>
+                )}
 
-                {form.total_amount && (
+                {!isCommission && form.total_amount && (
                   <div className="bg-zinc-50 rounded-lg p-3 space-y-1.5">
                     <div className="flex justify-between text-xs text-zinc-500">
                       <span>Neto</span>
