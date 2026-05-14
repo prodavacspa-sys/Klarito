@@ -13,7 +13,6 @@ import {
   Banknote,
 } from "lucide-react";
 import { RegistroModal } from "@/components/landing/registro-modal";
-import { ContactForm } from "@/components/landing/contact-form";
 
 const features = [
   {
@@ -255,13 +254,26 @@ export default function Home() {
 
       {/* Contacto */}
       <section className="w-full py-20 px-6 bg-zinc-50">
-        <div className="max-w-2xl mx-auto">
-          <div className="text-center space-y-2 mb-10">
+        <div className="max-w-md mx-auto text-center space-y-6">
+          <div className="space-y-2">
             <h2 className="text-2xl font-semibold text-zinc-900">¿Tienes dudas?</h2>
             <p className="text-sm text-zinc-500">Escríbenos y te respondemos a la brevedad.</p>
           </div>
-          <div className="bg-white border border-zinc-100 rounded-2xl p-8 shadow-sm">
-            <ContactForm />
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            <a
+              href="mailto:prodavac.spa@gmail.com"
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-lg border border-zinc-200 text-sm font-medium text-zinc-700 hover:bg-zinc-100 transition-colors w-full sm:w-auto justify-center"
+            >
+              ✉️ Escríbenos al correo
+            </a>
+            <a
+              href="https://www.instagram.com/estoy.klarito"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-lg border border-zinc-200 text-sm font-medium text-zinc-700 hover:bg-zinc-100 transition-colors w-full sm:w-auto justify-center"
+            >
+              📸 @estoy.klarito
+            </a>
           </div>
         </div>
       </section>
