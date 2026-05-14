@@ -361,6 +361,11 @@ export default function PerfilPage() {
           <Button onClick={saveCommissions} disabled={savingCommissions} className="bg-zinc-900 hover:bg-zinc-700 text-white">
             {savingCommissions ? 'Guardando...' : 'Guardar comisiones'}
           </Button>
+          {(Number(commissionDebit) === 0 || Number(commissionCredit) === 0) && (
+            <p className="text-xs text-amber-500 mt-1">
+              Configura tus tasas para que se apliquen automáticamente en ventas con tarjeta.
+            </p>
+          )}
         </CardContent>
       </Card>
     </div>
