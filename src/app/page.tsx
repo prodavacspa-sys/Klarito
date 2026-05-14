@@ -260,19 +260,21 @@ export default function Home() {
             <p className="text-sm text-zinc-500">Escríbenos y te respondemos a la brevedad.</p>
           </div>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <a
-              href="mailto:prodavac.spa@gmail.com"
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-lg border border-zinc-200 text-sm font-medium text-zinc-700 hover:bg-zinc-100 transition-colors w-full sm:w-auto justify-center"
-            >
-              ✉️ Escríbenos al correo
-            </a>
+            <div className="inline-flex items-center gap-2 px-6 py-3 rounded-lg border border-zinc-200 text-sm font-medium text-zinc-700 w-full sm:w-auto justify-center">
+              ✉️ prodavac.spa@gmail.com
+            </div>
             <a
               href="https://www.instagram.com/estoy.klarito"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 px-6 py-3 rounded-lg border border-zinc-200 text-sm font-medium text-zinc-700 hover:bg-zinc-100 transition-colors w-full sm:w-auto justify-center"
             >
-              📸 @estoy.klarito
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/>
+                <circle cx="12" cy="12" r="4"/>
+                <circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/>
+              </svg>
+              @estoy.klarito
             </a>
           </div>
         </div>
