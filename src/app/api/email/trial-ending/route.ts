@@ -25,6 +25,7 @@ export async function GET(request: Request) {
     .lte('created_at', day6End)
 
   for (const user of trialEndingUsers ?? []) {
+    if (!user.email) continue
     await sendTrialEndingEmail(user.email, user.business_name ?? 'Emprendedor')
   }
 

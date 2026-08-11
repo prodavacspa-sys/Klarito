@@ -34,6 +34,7 @@ export default function RegistroPage() {
     const params = new URLSearchParams(window.location.search)
     const ref = params.get('ref')
     if (ref) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- lee ?ref= del URL solo disponible tras montar en cliente; evita hydration mismatch
       setForm(f => ({ ...f, referralCode: ref }))
       localStorage.setItem('klarito_ref', ref)
     }
@@ -77,8 +78,8 @@ export default function RegistroPage() {
       rut_address: form.rutAddress || null,
     }).eq('user_id', data.user.id)
 
-    if (typeof window !== 'undefined' && (window as any).fbq) {
-      (window as any).fbq('track', 'Lead')
+    if (typeof window !== 'undefined' && window.fbq) {
+      window.fbq('track', 'Lead')
     }
     setStep('sent')
     setLoading(false)

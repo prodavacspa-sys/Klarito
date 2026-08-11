@@ -9,12 +9,12 @@ export default function BienvenidaPage() {
   const router = useRouter()
 
   useEffect(() => {
-    if (typeof window !== 'undefined' && (window as any).fbq) {
-      (window as any).fbq('track', 'Purchase', { value: 5950, currency: 'CLP' })
+    if (typeof window !== 'undefined' && window.fbq) {
+      window.fbq('track', 'Purchase', { value: 5950, currency: 'CLP' })
     }
     const timer = setTimeout(() => router.push('/dashboard'), 5000)
     return () => clearTimeout(timer)
-  }, [])
+  }, [router])
 
   return (
     <div className="flex items-center justify-center min-h-[80vh]">

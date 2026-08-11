@@ -11,7 +11,7 @@ import { toast } from 'sonner'
 import { Search, Plus, Minus, Trash2, ShoppingCart, CreditCard, Banknote, ArrowLeft, ArrowLeftRight } from 'lucide-react'
 import Link from 'next/link'
 
-type Product = { id: string; name: string; sale_price: number; stock: number; product_type: string }
+type Product = { id: string; name: string; sale_price: number; stock: number; product_type: string | null }
 type CartItem = Product & { quantity: number }
 
 const IVA_RATE = 0.19
@@ -30,8 +30,6 @@ export default function NuevaVentaPage() {
   const [hasDelivery, setHasDelivery] = useState(false)
   const [deliveryAmount, setDeliveryAmount] = useState('')
 
-  useEffect(() => { fetchProducts(); fetchSubscription() }, [])
-
   async function fetchSubscription() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
@@ -40,8 +38,8 @@ export default function NuevaVentaPage() {
       .eq('user_id', user.id).single()
     if (profile) {
       setSubscriptionStatus(profile.subscription_status)
-      setCommissionDebit(parseFloat(profile.commission_debit) || 0)
-      setCommissionCredit(parseFloat(profile.commission_credit) || 0)
+      setCommissionDebit(profile.commission_debit ?? 0)
+      setCommissionCredit(profile.commission_credit ?? 0)
     }
   }
 
@@ -54,6 +52,9 @@ export default function NuevaVentaPage() {
       .order('name')
     setProducts(data ?? [])
   }
+
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- fetch-on-mount estándar de la app
+  useEffect(() => { fetchProducts(); fetchSubscription() }, [])
 
   const filtered = products.filter(p =>
     p.name.toLowerCase().includes(search.toLowerCase())

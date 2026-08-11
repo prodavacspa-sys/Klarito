@@ -17,10 +17,10 @@ import { es } from 'date-fns/locale'
 type Expense = {
   id: string
   description: string
-  expense_category: 'fijo' | 'variable'
-  expense_type: 'gasto_variable_indirecto' | 'gasto_fijo'
-  expense_subcategory: string
-  document_type: 'factura' | 'boleta/otro'
+  expense_category: string
+  expense_type: string | null
+  expense_subcategory: string | null
+  document_type: string
   net_amount: number
   iva_amount: number
   total_amount: number
@@ -76,8 +76,6 @@ export default function GastosPage() {
   })
   const router = useRouter()
 
-  useEffect(() => { fetchExpenses() }, [selectedMonth])
-
   async function fetchExpenses() {
     setLoading(true)
     const [year, month] = selectedMonth.split('-').map(Number)
@@ -98,6 +96,9 @@ export default function GastosPage() {
     }
     setLoading(false)
   }
+
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- fetch-on-mount estándar de la app
+  useEffect(() => { fetchExpenses() }, [selectedMonth])
 
   const total = form.total_amount ? parseFloat(form.total_amount) : 0
   const hasIva = form.document_type === 'factura'
@@ -363,7 +364,7 @@ export default function GastosPage() {
         ) : (
           <div className="divide-y divide-zinc-100">
             {filteredExpenses.map(e => {
-              const tipoInfo = TIPO_LABELS[e.expense_type] ?? TIPO_LABELS.gasto_fijo
+              const tipoInfo = TIPO_LABELS[e.expense_type as keyof typeof TIPO_LABELS] ?? TIPO_LABELS.gasto_fijo
               return (
                 <div key={e.id} className="px-4 py-3.5 hover:bg-zinc-50 flex items-center justify-between gap-3">
                   <div className="flex items-center gap-3 min-w-0">

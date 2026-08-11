@@ -15,7 +15,7 @@ type Sale = {
   total_amount: number
   net_amount: number
   iva_amount: number
-  notes?: string
+  notes: string | null
   created_at: string
   sale_items?: SaleItem[]
 }
@@ -28,8 +28,6 @@ export default function VentasPage() {
     const now = new Date()
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
   })
-
-  useEffect(() => { fetchSales() }, [selectedMonth])
 
   async function fetchSales() {
     setLoading(true)
@@ -45,6 +43,9 @@ export default function VentasPage() {
     setSales(data ?? [])
     setLoading(false)
   }
+
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- fetch-on-mount estándar de la app
+  useEffect(() => { fetchSales() }, [selectedMonth])
 
   const fmt = (n: number) => new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 }).format(n)
 

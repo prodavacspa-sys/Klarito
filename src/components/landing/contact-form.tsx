@@ -20,8 +20,8 @@ export function ContactForm() {
       body: JSON.stringify({ name, email, message }),
     })
     if (res.ok) {
-      if (typeof window !== 'undefined' && (window as any).fbq) {
-        (window as any).fbq('track', 'Contact')
+      if (typeof window !== 'undefined' && window.fbq) {
+        window.fbq('track', 'Contact')
       }
       window.location.href = '/contacto/gracias'
     } else {

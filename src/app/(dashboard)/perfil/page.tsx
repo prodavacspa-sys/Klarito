@@ -22,13 +22,10 @@ export default function PerfilPage() {
   const [loadingPayment, setLoadingPayment] = useState(false)
   const [couponCode, setCouponCode] = useState('')
   const [applyingCoupon, setApplyingCoupon] = useState(false)
-  const [flowSubscriptionId, setFlowSubscriptionId] = useState('')
   const [ppmRate, setPpmRate] = useState('0')
   const [commissionDebit, setCommissionDebit] = useState('1.29')
   const [commissionCredit, setCommissionCredit] = useState('3.19')
   const [savingCommissions, setSavingCommissions] = useState(false)
-
-  useEffect(() => { fetchProfile() }, [])
 
   async function fetchProfile() {
     const { data: { user } } = await supabase.auth.getUser()
@@ -38,13 +35,15 @@ export default function PerfilPage() {
     if (data) {
       setBusinessName(data.business_name ?? '')
       setSubscriptionStatus(data.subscription_status)
-      setFlowSubscriptionId(data.flow_subscription_id ?? '')
       setPpmRate(String(data.ppm_rate ?? 0))
       if (data.commission_debit) setCommissionDebit(String(data.commission_debit))
       if (data.commission_credit) setCommissionCredit(String(data.commission_credit))
     }
     setLoading(false)
   }
+
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- fetch-on-mount estándar de la app
+  useEffect(() => { fetchProfile() }, [])
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault()

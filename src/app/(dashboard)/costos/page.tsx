@@ -28,7 +28,7 @@ type Recipe = {
   description: string | null
   product_id: string | null
   monthly_units: number
-  product?: { name: string }
+  product?: { name: string } | null
 }
 
 type RecipeSummary = {
@@ -60,8 +60,6 @@ export default function CostosPage() {
   const [subscriptionStatus, setSubscriptionStatus] = useState<string>('inactive')
   const router = useRouter()
 
-  useEffect(() => { fetchAll() }, [])
-
   async function fetchAll() {
     setLoading(true)
     const [{ data: r }, { data: s }, { data: p }] = await Promise.all([
@@ -79,6 +77,9 @@ export default function CostosPage() {
     }
     setLoading(false)
   }
+
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- fetch-on-mount estándar de la app
+  useEffect(() => { fetchAll() }, [])
 
   function getSummary(id: string) {
     return summaries.find(s => s.recipe_id === id)
@@ -108,7 +109,7 @@ export default function CostosPage() {
       monthly_units: String(r.monthly_units),
     })
     const { data } = await supabase.from('recipe_items').select('*').eq('recipe_id', r.id)
-    setItems((data as any[])?.map(i => ({ id: i.id, name: i.name, quantity: String(i.quantity), unit: i.unit, unit_cost: String(i.unit_cost) })) ?? [emptyItem()])
+    setItems(data?.map(i => ({ id: i.id, name: i.name, quantity: String(i.quantity), unit: i.unit, unit_cost: String(i.unit_cost) })) ?? [emptyItem()])
     setOpen(true)
   }
 
@@ -136,15 +137,17 @@ export default function CostosPage() {
     let recipeId = editing?.id
 
     if (editing) {
-      const { error } = await supabase.from('recipes').update(payload as any).eq('id', editing.id)
+      const { error } = await supabase.from('recipes').update(payload).eq('id', editing.id)
       if (error) { toast.error('Error al actualizar'); setSaving(false); return }
       await supabase.from('recipe_items').delete().eq('recipe_id', editing.id)
     } else {
       const { data: { user } } = await supabase.auth.getUser()
-      const { data, error } = await supabase.from('recipes').insert({ ...payload, user_id: user!.id } as any).select().single()
+      const { data, error } = await supabase.from('recipes').insert({ ...payload, user_id: user!.id }).select().single()
       if (error) { toast.error('Error al crear receta'); setSaving(false); return }
       recipeId = data.id
     }
+
+    if (!recipeId) { toast.error('Error al guardar receta'); setSaving(false); return }
 
     const validItems = items.filter(i => i.name && i.quantity && i.unit_cost)
     if (validItems.length > 0) {
@@ -160,7 +163,7 @@ export default function CostosPage() {
     }
 
     if (form.product_id) {
-      const summary = getSummary(recipeId!)
+      const summary = getSummary(recipeId)
       const newCost = summary?.total_unit_cost ?? totalVariable
       await supabase.from('products').update({ cost_price: newCost }).eq('id', form.product_id)
     }

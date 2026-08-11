@@ -3,24 +3,24 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import type { TablesInsert } from '@/types/database'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Badge } from '@/components/ui/badge'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { toast } from 'sonner'
-import { Plus, Pencil, Trash2, Download, AlertTriangle, FlaskConical, Factory } from 'lucide-react'
+import { Plus, Pencil, Trash2, Download, AlertTriangle, Factory } from 'lucide-react'
 
 type ProductType = 'resale' | 'manufactured' | 'service' | 'ingredient'
 
 type Product = {
   id: string
   name: string
-  product_type: ProductType
+  product_type: string | null
   cost_price: number
-  cost_per_unit: number
-  unit: string
+  cost_per_unit: number | null
+  unit: string | null
   margin_percentage: number
   sale_price: number
   stock: number
@@ -76,8 +76,6 @@ export default function InventarioPage() {
   const [productionQty, setProductionQty] = useState('')
   const [productionRecipe, setProductionRecipe] = useState<(RecipeIngredient & { available_stock: number })[]>([])
 
-  useEffect(() => { fetchAll() }, [sortBy])
-
   async function fetchAll() {
     setLoading(true)
     const { data: { user } } = await supabase.auth.getUser()
@@ -94,6 +92,9 @@ export default function InventarioPage() {
     setIngredients((data ?? []).filter(p => p.product_type === 'ingredient'))
     setLoading(false)
   }
+
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- fetch-on-mount estándar de la app
+  useEffect(() => { fetchAll() }, [sortBy])
 
   function handleField(key: string, value: string) {
     const updated = { ...form, [key]: value }
@@ -134,7 +135,7 @@ export default function InventarioPage() {
     setEditing(p)
     setForm({
       name: p.name,
-      product_type: p.product_type ?? 'resale',
+      product_type: (p.product_type as ProductType) ?? 'resale',
       cost_price: String(p.cost_price),
       cost_per_unit: String(p.cost_per_unit ?? 0),
       unit: p.unit ?? 'unidad',
@@ -146,11 +147,11 @@ export default function InventarioPage() {
     if (p.product_type === 'manufactured' || p.product_type === 'service') {
       const { data } = await supabase
         .from('recipe_ingredients')
-        .select('*, ingredient:ingredient_id(name)')
+        .select('*, ingredient:products!recipe_ingredients_ingredient_id_fkey(name)')
         .eq('product_id', p.id)
       setRecipe(data?.map(r => ({
         id: r.id,
-        ingredient_id: r.ingredient_id,
+        ingredient_id: r.ingredient_id ?? '',
         ingredient_name: r.ingredient?.name,
         quantity: r.quantity,
         unit: r.unit,
@@ -167,7 +168,7 @@ export default function InventarioPage() {
     setSaving(true)
     const { data: { user } } = await supabase.auth.getUser()
 
-    const payload: any = {
+    const payload: Partial<TablesInsert<'products'>> = {
       name: form.name,
       product_type: form.product_type,
       unit: form.unit,
@@ -194,7 +195,7 @@ export default function InventarioPage() {
       const { error } = await supabase.from('products').update(payload).eq('id', editing.id)
       if (error) { toast.error('Error al actualizar'); setSaving(false); return }
     } else {
-      const { data, error } = await supabase.from('products').insert({ ...payload, user_id: user!.id }).select().single()
+      const { data, error } = await supabase.from('products').insert({ ...payload, name: form.name, user_id: user!.id }).select().single()
       if (error) { toast.error('Error al crear'); setSaving(false); return }
       productId = data.id
     }
@@ -232,10 +233,10 @@ export default function InventarioPage() {
     setProductionQty('')
     const { data } = await supabase
       .from('recipe_ingredients')
-      .select('*, ingredient:ingredient_id(name, stock, cost_per_unit, unit)')
+      .select('*, ingredient:products!recipe_ingredients_ingredient_id_fkey(name, stock, cost_per_unit, unit)')
       .eq('product_id', p.id)
     setProductionRecipe(data?.map(r => ({
-      ingredient_id: r.ingredient_id,
+      ingredient_id: r.ingredient_id ?? '',
       ingredient_name: r.ingredient?.name,
       quantity: r.quantity,
       unit: r.unit,

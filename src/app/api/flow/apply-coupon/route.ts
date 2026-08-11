@@ -119,10 +119,6 @@ export async function POST(request: Request) {
       })
       .eq('user_id', user.id)
 
-    console.log('update error:', updateError)
-    console.log('user.id:', user.id)
-    console.log('subscriptionId:', subscription.subscriptionId)
-
     if (updateError) {
       return NextResponse.json({ error: 'Suscripción creada en Flow pero error al actualizar perfil: ' + updateError.message }, { status: 500 })
     }

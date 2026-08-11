@@ -1,7 +1,7 @@
 'use client'
 
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts'
-import { TrendingUp, TrendingDown, FileText, AlertCircle } from 'lucide-react'
+import { TrendingUp, TrendingDown, FileText } from 'lucide-react'
 
 interface Props {
   businessName: string

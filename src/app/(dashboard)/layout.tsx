@@ -3,6 +3,17 @@ import { createClient } from '@/lib/supabase/server'
 import { Sidebar } from '@/components/app/sidebar'
 import { TrialBanner } from '@/components/app/trial-banner'
 
+function calcTrialDaysLeft(profile: { trial_started_at: string | null; flow_subscription_id: string | null; created_at: string } | null) {
+  const now = Date.now()
+  if (profile?.trial_started_at) {
+    return Math.max(0, 7 - Math.floor((now - new Date(profile.trial_started_at).getTime()) / (1000 * 60 * 60 * 24)))
+  }
+  if (profile?.flow_subscription_id) {
+    return Math.max(0, 7 - Math.floor((now - new Date(profile.created_at).getTime()) / (1000 * 60 * 60 * 24)))
+  }
+  return 7
+}
+
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -15,11 +26,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
     .eq('user_id', user.id)
     .single()
 
-  const trialDaysLeft = profile?.trial_started_at
-    ? Math.max(0, 7 - Math.floor((Date.now() - new Date(profile.trial_started_at).getTime()) / (1000 * 60 * 60 * 24)))
-    : profile?.flow_subscription_id
-    ? Math.max(0, 7 - Math.floor((Date.now() - new Date(profile.created_at).getTime()) / (1000 * 60 * 60 * 24)))
-    : 7
+  const trialDaysLeft = calcTrialDaysLeft(profile)
 
   return (
     <div className="flex min-h-screen bg-zinc-50">

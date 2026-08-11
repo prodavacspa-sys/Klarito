@@ -91,12 +91,11 @@ export async function updateReferralDiscount(referrerUserId: string) {
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL!
 
   // 10+ referidos → gratis permanente
-  if (totalReferidos >= 10 && profile.referral_discount < 100) {
+  if (totalReferidos >= 10 && (profile.referral_discount ?? 0) < 100) {
     if (profile.flow_subscription_id) {
-      const cancelResult = await flowPost('/subscription/cancel', {
+      await flowPost('/subscription/cancel', {
         subscriptionId: profile.flow_subscription_id,
       })
-      console.log('cancel result:', JSON.stringify(cancelResult))
     }
     await supabase.from('profiles')
       .update({
@@ -109,13 +108,12 @@ export async function updateReferralDiscount(referrerUserId: string) {
   }
 
   // 5+ referidos → 50% descuento
-  if (totalReferidos >= 5 && profile.referral_discount < 50) {
+  if (totalReferidos >= 5 && (profile.referral_discount ?? 0) < 50 && profile.flow_customer_id) {
     // Cancelar suscripción actual
     if (profile.flow_subscription_id) {
-      const cancelResult = await flowPost('/subscription/cancel', {
+      await flowPost('/subscription/cancel', {
         subscriptionId: profile.flow_subscription_id,
       })
-      console.log('cancel result:', JSON.stringify(cancelResult))
     }
     // Crear nueva suscripción con plan 50%
     const newSub = await flowPost('/subscription/create', {
@@ -123,7 +121,6 @@ export async function updateReferralDiscount(referrerUserId: string) {
       customerId: profile.flow_customer_id,
       urlConfirmation: `${siteUrl}/api/flow/webhook`,
     })
-    console.log('new subscription result:', JSON.stringify(newSub))
     if (newSub.subscriptionId) {
       await supabase.from('profiles')
         .update({

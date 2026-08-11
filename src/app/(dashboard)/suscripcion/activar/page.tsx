@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { Loader2 } from 'lucide-react'
@@ -9,6 +9,27 @@ import { Button } from '@/components/ui/button'
 export default function ActivarSuscripcionPage() {
   const [loading, setLoading] = useState(false)
   const router = useRouter()
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const params = new URLSearchParams(window.location.search)
+    if (params.get('error') === '1') {
+      toast.error('No pudimos activar tu suscripción. Intenta de nuevo o contáctanos.')
+      const url = new URL(window.location.href)
+      url.searchParams.delete('error')
+      router.replace(url.pathname + url.search)
+    }
+  }, [router])
+
+  // Trackear inicio de checkout (una sola vez al montar)
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.fbq) {
+      window.fbq('track', 'InitiateCheckout', {
+        value: 5950,
+        currency: 'CLP',
+      })
+    }
+  }, [])
 
   async function handleActivar() {
     setLoading(true)
@@ -27,14 +48,6 @@ export default function ActivarSuscripcionPage() {
       toast.error('Error de conexión')
     }
     setLoading(false)
-  }
-
-  // Trackear inicio de checkout
-  if (typeof window !== 'undefined' && (window as any).fbq) {
-    (window as any).fbq('track', 'InitiateCheckout', {
-      value: 5950,
-      currency: 'CLP',
-    })
   }
 
   return (

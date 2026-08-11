@@ -8,14 +8,19 @@ import { Badge } from '@/components/ui/badge'
 import { toast } from 'sonner'
 import { Gift, Copy, Users, CheckCircle2 } from 'lucide-react'
 
+type Referral = {
+  id: string
+  status: string
+  credit_amount: number
+  created_at: string
+}
+
 export default function ReferidosPage() {
   const supabase = createClient()
   const [referralCode, setReferralCode] = useState('')
   const [credits, setCredits] = useState(0)
-  const [referrals, setReferrals] = useState<any[]>([])
+  const [referrals, setReferrals] = useState<Referral[]>([])
   const [loading, setLoading] = useState(true)
-
-  useEffect(() => { fetchData() }, [])
 
   async function fetchData() {
     const { data: { user } } = await supabase.auth.getUser()
@@ -51,6 +56,9 @@ export default function ReferidosPage() {
     setReferrals(referralData ?? [])
     setLoading(false)
   }
+
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- fetch-on-mount estándar de la app
+  useEffect(() => { fetchData() }, [])
 
   const referralUrl = `https://www.klarito.cl/registro?ref=${referralCode}`
   const completedReferrals = referrals.filter(r => r.status === 'completed').length

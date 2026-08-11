@@ -1,9 +1,7 @@
 import { NextResponse } from 'next/server'
 
 export async function GET(request: Request) {
-  console.log('=== REGISTER CALLBACK ===', Object.fromEntries(new URL(request.url).searchParams))
   const { searchParams, origin } = new URL(request.url)
-  const token = searchParams.get('token')
   const cid = searchParams.get('cid')
   const planId = searchParams.get('pid')
   const userId = searchParams.get('uid')
@@ -46,7 +44,6 @@ export async function GET(request: Request) {
     customerId,
     urlConfirmation: `${siteUrl}/api/flow/webhook`,
   })
-  console.log('subscription result:', JSON.stringify(subscription))
 
   const { createClient } = await import('@/lib/supabase/server')
   const supabase = await createClient()
@@ -61,7 +58,7 @@ export async function GET(request: Request) {
       .eq('user_id', userId)
     return Response.redirect(`${siteUrl}/suscripcion/bienvenida`)
   }
-  return Response.redirect(`${siteUrl}/suscripcion/bienvenida`)
+  return Response.redirect(`${siteUrl}/suscripcion/activar?error=1`)
 }
 
 export async function POST(request: Request) {
