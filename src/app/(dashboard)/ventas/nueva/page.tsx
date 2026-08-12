@@ -92,6 +92,10 @@ export default function NuevaVentaPage() {
 
   async function handleConfirm() {
     if (cart.length === 0) { toast.error('El carrito está vacío'); return }
+
+    const sinStock = cart.find(i => i.product_type !== 'service' && i.quantity > i.stock)
+    if (sinStock) { toast.error(`Stock insuficiente: ${sinStock.name} (disponible: ${sinStock.stock})`); return }
+
     setSaving(true)
 
     const { data: { user } } = await supabase.auth.getUser()
@@ -132,7 +136,12 @@ export default function NuevaVentaPage() {
       }))
     )
 
-    if (itemsError) { toast.error('Error al guardar items'); setSaving(false); return }
+    if (itemsError) {
+      await supabase.from('sales').delete().eq('id', sale.id)
+      toast.error(itemsError.message.includes('Stock insuficiente') ? itemsError.message : 'Error al guardar items')
+      setSaving(false)
+      return
+    }
 
     if (commissionRate > 0 && commissionNeto > 0) {
       const commissionIva = Math.round(commissionNeto * 0.19)
@@ -164,14 +173,6 @@ export default function NuevaVentaPage() {
         total_amount: deliveryCost + deliveryIva,
         is_recurring: false,
       })
-    }
-
-    for (const item of cart) {
-      if (item.product_type !== 'service') {
-        await supabase.from('products')
-          .update({ stock: Math.max(0, item.stock - item.quantity) })
-          .eq('id', item.id)
-      }
     }
 
     toast.success(`Venta registrada — ${fmt(subtotal)}`)

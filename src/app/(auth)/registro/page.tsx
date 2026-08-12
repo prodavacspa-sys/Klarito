@@ -52,31 +52,33 @@ export default function RegistroPage() {
     }
     setLoading(true)
 
+    // Los datos van como metadata del signUp (no un update posterior) porque, con
+    // confirmación de email activada, todavía no hay sesión iniciada justo después
+    // del signUp — un update aquí se ejecutaría sin auth y la RLS lo bloquea en silencio.
+    // El trigger handle_new_user() en la base de datos lee este metadata al crear el perfil.
     const { data, error } = await supabase.auth.signUp({
       email: form.email,
       password: form.password,
       options: {
-        data: { business_name: form.businessName },
+        data: {
+          business_name: form.businessName,
+          first_name: form.firstName,
+          last_name: form.lastName,
+          phone: form.phone,
+          address: form.address,
+          comuna: form.comuna,
+          empresa_type: form.empresaType,
+          rut_empresa: form.rutEmpresa || null,
+          giro: form.giro || null,
+          rut_address: form.rutAddress || null,
+          referral_code: form.referralCode || null,
+        },
         emailRedirectTo: `${location.origin}/auth/confirm`,
       },
     })
 
     if (error) { toast.error(error.message); setLoading(false); return }
     if (!data.user) { toast.error('Error al crear cuenta'); setLoading(false); return }
-
-    await supabase.from('profiles').update({
-      first_name: form.firstName,
-      last_name: form.lastName,
-      phone: form.phone,
-      address: form.address,
-      comuna: form.comuna,
-      business_name: form.businessName,
-      referred_by: form.referralCode || null,
-      empresa_type: form.empresaType,
-      rut_empresa: form.rutEmpresa || null,
-      giro: form.giro || null,
-      rut_address: form.rutAddress || null,
-    }).eq('user_id', data.user.id)
 
     if (typeof window !== 'undefined' && window.fbq) {
       window.fbq('track', 'Lead')

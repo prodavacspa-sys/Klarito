@@ -353,7 +353,12 @@ export default function InventarioPage() {
                       <button
                         key={key}
                         type="button"
-                        onClick={() => setForm(f => ({ ...f, product_type: key }))}
+                        onClick={() => setForm(f => ({
+                          ...f,
+                          product_type: key,
+                          // El stock de productos fabricados/servicios se genera vía "Registrar producción", no a mano
+                          stock: !editing && (key === 'manufactured' || key === 'service') ? '0' : f.stock,
+                        }))}
                         className={`flex items-start gap-2 p-3 rounded-xl border-2 text-left transition-colors ${
                           form.product_type === key ? 'border-zinc-900 bg-zinc-50' : 'border-zinc-200 hover:border-zinc-300'
                         }`}
@@ -563,7 +568,17 @@ export default function InventarioPage() {
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-2">
                     <Label>Stock inicial</Label>
-                    <Input type="number" placeholder="0" value={form.stock} onChange={e => handleField('stock', e.target.value)} className="border-zinc-200 tabular-nums" />
+                    <Input
+                      type="number"
+                      placeholder="0"
+                      value={form.stock}
+                      onChange={e => handleField('stock', e.target.value)}
+                      disabled={!editing && (form.product_type === 'manufactured' || form.product_type === 'service')}
+                      className="border-zinc-200 tabular-nums disabled:opacity-60 disabled:cursor-not-allowed"
+                    />
+                    {!editing && (form.product_type === 'manufactured' || form.product_type === 'service') && (
+                      <p className="text-xs text-zinc-400">Se genera con &quot;Registrar producción&quot; una vez creado, para descontar los insumos de la receta.</p>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <Label>Alerta mínimo</Label>

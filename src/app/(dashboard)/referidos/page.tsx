@@ -11,14 +11,12 @@ import { Gift, Copy, Users, CheckCircle2 } from 'lucide-react'
 type Referral = {
   id: string
   status: string
-  credit_amount: number
   created_at: string
 }
 
 export default function ReferidosPage() {
   const supabase = createClient()
   const [referralCode, setReferralCode] = useState('')
-  const [credits, setCredits] = useState(0)
   const [referrals, setReferrals] = useState<Referral[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -29,12 +27,6 @@ export default function ReferidosPage() {
     const { data: profile } = await supabase
       .from('profiles')
       .select('referral_code')
-      .eq('user_id', user.id)
-      .single()
-
-    const { data: creditData } = await supabase
-      .from('referral_credits')
-      .select('total, used')
       .eq('user_id', user.id)
       .single()
 
@@ -52,7 +44,6 @@ export default function ReferidosPage() {
       setReferralCode(profile.referral_code)
     }
 
-    setCredits((creditData?.total ?? 0) - (creditData?.used ?? 0))
     setReferrals(referralData ?? [])
     setLoading(false)
   }
@@ -62,14 +53,11 @@ export default function ReferidosPage() {
 
   const referralUrl = `https://www.klarito.cl/registro?ref=${referralCode}`
   const completedReferrals = referrals.filter(r => r.status === 'completed').length
-  const monthsFree = Math.floor(credits / 5950)
 
   function copyLink() {
     navigator.clipboard.writeText(referralUrl)
     toast.success('Enlace copiado')
   }
-
-  const fmt = (n: number) => new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 }).format(n)
 
   if (loading) return <div className="p-8 text-center text-zinc-400 text-sm">Cargando...</div>
 
@@ -77,17 +65,10 @@ export default function ReferidosPage() {
     <div className="space-y-6 max-w-2xl">
       <div>
         <h1 className="text-2xl font-semibold text-zinc-900">Programa de referidos</h1>
-        <p className="text-sm text-zinc-500 mt-1">Invita a otros emprendedores y gana créditos</p>
+        <p className="text-sm text-zinc-500 mt-1">Invita a otros emprendedores y gana descuentos</p>
       </div>
 
-      <div className="grid grid-cols-3 gap-4">
-        <Card className="border-zinc-200 shadow-none">
-          <CardContent className="pt-4 pb-4">
-            <p className="text-xs text-zinc-400">Crédito disponible</p>
-            <p className="text-xl font-semibold tabular-nums text-emerald-600 mt-1">{fmt(credits)}</p>
-            <p className="text-xs text-zinc-400 mt-0.5">{monthsFree > 0 ? `${monthsFree} mes${monthsFree > 1 ? 'es' : ''} gratis` : 'acumula $5.950 para 1 mes'}</p>
-          </CardContent>
-        </Card>
+      <div className="grid grid-cols-2 gap-4">
         <Card className="border-zinc-200 shadow-none">
           <CardContent className="pt-4 pb-4">
             <p className="text-xs text-zinc-400">Referidos completados</p>
@@ -203,7 +184,7 @@ export default function ReferidosPage() {
                     <p className="text-xs text-zinc-400">{new Date(r.created_at).toLocaleDateString('es-CL')}</p>
                   </div>
                   {r.status === 'completed'
-                    ? <Badge variant="outline" className="text-emerald-600 border-emerald-200 bg-emerald-50 text-xs flex items-center gap-1"><CheckCircle2 className="h-3 w-3" /> +{fmt(r.credit_amount)}</Badge>
+                    ? <Badge variant="outline" className="text-emerald-600 border-emerald-200 bg-emerald-50 text-xs flex items-center gap-1"><CheckCircle2 className="h-3 w-3" /> Completado</Badge>
                     : <Badge variant="outline" className="text-zinc-400 border-zinc-200 text-xs">Pendiente</Badge>
                   }
                 </div>
