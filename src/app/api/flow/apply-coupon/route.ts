@@ -115,7 +115,9 @@ export async function POST(request: Request) {
     const { error: updateError } = await supabase.from('profiles')
       .update({
         subscription_status: 'active',
-        flow_subscription_id: subscription.subscriptionId
+        flow_subscription_id: subscription.subscriptionId,
+        trial_started_at: new Date().toISOString(),
+        cancelled_at: null,
       })
       .eq('user_id', user.id)
 

@@ -54,6 +54,7 @@ export async function GET(request: Request) {
         subscription_status: 'active',
         flow_subscription_id: subscription.subscriptionId,
         trial_started_at: new Date().toISOString(),
+        cancelled_at: null,
       })
       .eq('user_id', userId)
     return Response.redirect(`${siteUrl}/suscripcion/bienvenida`)

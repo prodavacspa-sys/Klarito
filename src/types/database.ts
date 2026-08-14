@@ -155,6 +155,7 @@ export type Database = {
         Row: {
           address: string | null
           business_name: string | null
+          cancelled_at: string | null
           commission_credit: number | null
           commission_debit: number | null
           comuna: string | null
@@ -182,6 +183,7 @@ export type Database = {
         Insert: {
           address?: string | null
           business_name?: string | null
+          cancelled_at?: string | null
           commission_credit?: number | null
           commission_debit?: number | null
           comuna?: string | null
@@ -209,6 +211,7 @@ export type Database = {
         Update: {
           address?: string | null
           business_name?: string | null
+          cancelled_at?: string | null
           commission_credit?: number | null
           commission_debit?: number | null
           comuna?: string | null
@@ -472,6 +475,7 @@ export type Database = {
           commission_amount: number | null
           commission_rate: number | null
           created_at: string
+          delivery_amount: number
           id: string
           iva_amount: number
           net_amount: number
@@ -484,6 +488,7 @@ export type Database = {
           commission_amount?: number | null
           commission_rate?: number | null
           created_at?: string
+          delivery_amount?: number
           id?: string
           iva_amount?: number
           net_amount?: number
@@ -496,6 +501,7 @@ export type Database = {
           commission_amount?: number | null
           commission_rate?: number | null
           created_at?: string
+          delivery_amount?: number
           id?: string
           iva_amount?: number
           net_amount?: number

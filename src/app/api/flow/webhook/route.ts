@@ -39,28 +39,36 @@ export async function POST(request: Request) {
 
   if (event === 'subscription_created') {
     await supabase.from('profiles')
-      .update({ subscription_status: 'active', flow_subscription_id: subscriptionId })
+      .update({
+        subscription_status: 'active',
+        flow_subscription_id: subscriptionId,
+        trial_started_at: new Date().toISOString(),
+        cancelled_at: null,
+      })
       .eq('flow_customer_id', customerId)
     await sendWelcomeEmail(email, businessName)
   }
 
   if (event === 'subscription_charged') {
     await supabase.from('profiles')
-      .update({ subscription_status: 'active' })
+      .update({ subscription_status: 'active', cancelled_at: null })
       .eq('flow_customer_id', customerId)
     await sendPaymentSuccessEmail(email, businessName)
     await creditReferrer(customerId) // customerId es flow_customer_id, ya corregido en referrals.ts
   }
 
+  // 'cancelled', 'expired' y 'charge_failed' se tratan igual: dejan de estar activos y
+  // arrancan su propio período de gracia de 30 días (cancelled_at), separado del trial
+  // original que nunca convirtió (created_at). Ver cron manage-accounts.
   if (event === 'subscription_cancelled' || event === 'subscription_expired') {
     await supabase.from('profiles')
-      .update({ subscription_status: 'inactive' })
+      .update({ subscription_status: 'cancelled', cancelled_at: new Date().toISOString() })
       .eq('flow_customer_id', customerId)
   }
 
   if (event === 'subscription_charge_failed') {
     await supabase.from('profiles')
-      .update({ subscription_status: 'inactive' })
+      .update({ subscription_status: 'cancelled', cancelled_at: new Date().toISOString() })
       .eq('flow_customer_id', customerId)
     await sendPaymentFailedEmail(email, businessName)
   }

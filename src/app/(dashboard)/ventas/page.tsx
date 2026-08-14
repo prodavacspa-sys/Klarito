@@ -15,6 +15,7 @@ type Sale = {
   total_amount: number
   net_amount: number
   iva_amount: number
+  delivery_amount: number | null
   notes: string | null
   created_at: string
   sale_items?: SaleItem[]
@@ -101,6 +102,7 @@ export default function VentasPage() {
                     </p>
                     <p className="text-xs text-zinc-400 mt-0.5">
                       {sale.sale_items?.map(i => `${i.quantity}× ${i.product?.name}`).join(', ')}
+                      {!!sale.delivery_amount && sale.delivery_amount > 0 && ` + delivery ${fmt(sale.delivery_amount)}`}
                     </p>
                   </div>
                   <div className="text-right">

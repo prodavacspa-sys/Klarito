@@ -17,10 +17,12 @@ export async function GET(request: Request) {
   const day6Start = new Date(day6.setHours(0, 0, 0, 0)).toISOString()
   const day6End = new Date(day6.setHours(23, 59, 59, 999)).toISOString()
 
+  // 'inactive' = nunca agregó tarjeta; es el grupo que de verdad pierde acceso el día 7
+  // (el copy del correo dice "activa tu suscripción hoy o perderás acceso").
   const { data: trialEndingUsers } = await supabase
     .from('profiles')
     .select('email, business_name, flow_subscription_id')
-    .eq('subscription_status', 'active')
+    .eq('subscription_status', 'inactive')
     .gte('created_at', day6Start)
     .lte('created_at', day6End)
 

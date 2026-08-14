@@ -82,10 +82,19 @@ export default function NuevaVentaPage() {
   }
 
   const deliveryCost = hasDelivery ? (parseFloat(deliveryAmount) || 0) : 0
-  const commissionRate = payMethod === 'debito' ? commissionDebit : payMethod === 'credito' ? commissionCredit : 0
-  const cartNeto = cart.reduce((sum, i) => sum + i.sale_price * i.quantity, 0)
-  const commissionNeto = Math.round(cartNeto * commissionRate / 100)
-  const baseNeta = cartNeto + commissionNeto + deliveryCost
+
+  // Precio fijo al cliente: se recarga la tasa MÁS ALTA entre débito/crédito sobre el precio
+  // base, independiente del medio de pago elegido. Así el precio no varía en caja.
+  // La comisión REAL (según el medio efectivamente usado) se sigue registrando como gasto
+  // interno para llevar el costo real del procesador, pero ya no se descuenta/suma al total.
+  const maxCommissionRate = Math.max(commissionDebit, commissionCredit, 0)
+  const markupFactor = 1 + maxCommissionRate / 100
+  const actualCommissionRate = payMethod === 'debito' ? commissionDebit : payMethod === 'credito' ? commissionCredit : 0
+
+  const cartNetoBase = cart.reduce((sum, i) => sum + i.sale_price * i.quantity, 0)
+  const cartNetoConRecargo = Math.round(cartNetoBase * markupFactor)
+  const commissionNeto = Math.round(cartNetoConRecargo * actualCommissionRate / 100)
+  const baseNeta = cartNetoConRecargo + deliveryCost
   const ivaAmount = Math.round(baseNeta * IVA_RATE)
   const subtotal = baseNeta + ivaAmount
   const netAmount = baseNeta
@@ -118,8 +127,9 @@ export default function NuevaVentaPage() {
         total_amount: subtotal,
         notes: `Pago: ${payMethod}`,
         payment_type: payMethod,
-        commission_rate: commissionRate,
+        commission_rate: actualCommissionRate,
         commission_amount: commissionNeto,
+        delivery_amount: deliveryCost,
       })
       .select()
       .single()
@@ -131,8 +141,8 @@ export default function NuevaVentaPage() {
         sale_id: sale.id,
         product_id: i.id,
         quantity: i.quantity,
-        unit_price: Math.round(i.sale_price * 1.19),
-        subtotal: Math.round(i.sale_price * 1.19) * i.quantity,
+        unit_price: Math.round(i.sale_price * markupFactor * 1.19),
+        subtotal: Math.round(i.sale_price * markupFactor * 1.19) * i.quantity,
       }))
     )
 
@@ -143,7 +153,7 @@ export default function NuevaVentaPage() {
       return
     }
 
-    if (commissionRate > 0 && commissionNeto > 0) {
+    if (actualCommissionRate > 0 && commissionNeto > 0) {
       const commissionIva = Math.round(commissionNeto * 0.19)
       await supabase.from('expenses').insert({
         user_id: user!.id,
@@ -226,7 +236,7 @@ export default function NuevaVentaPage() {
                       </p>
                     </div>
                     <div className="flex items-center gap-3">
-                      <span className="text-sm font-medium tabular-nums text-emerald-600">{fmt(Math.round(p.sale_price * 1.19))}</span>
+                      <span className="text-sm font-medium tabular-nums text-emerald-600">{fmt(Math.round(p.sale_price * markupFactor * 1.19))}</span>
                       <span className="text-xs text-zinc-400 tabular-nums">Neto: {fmt(p.sale_price)}</span>
                       <Button size="sm" variant="outline" className="h-7 w-7 p-0 border-zinc-200" onClick={() => addToCart(p)}>
                         <Plus className="h-3.5 w-3.5" />
@@ -276,7 +286,7 @@ export default function NuevaVentaPage() {
                             <Plus className="h-3 w-3" />
                           </button>
                         </div>
-                        <span className="text-sm tabular-nums font-medium text-zinc-900">{fmt(item.sale_price * item.quantity)}</span>
+                        <span className="text-sm tabular-nums font-medium text-zinc-900">{fmt(Math.round(item.sale_price * markupFactor) * item.quantity)}</span>
                       </div>
                     </div>
                   ))}
@@ -287,11 +297,8 @@ export default function NuevaVentaPage() {
                     <span>Neto</span>
                     <span className="tabular-nums">{fmt(netAmount)}</span>
                   </div>
-                  {commissionRate > 0 && commissionNeto > 0 && (
-                    <div className="flex justify-between text-xs text-zinc-400">
-                      <span>Comisión {payMethod} ({commissionRate}%)</span>
-                      <span className="tabular-nums">+{fmt(commissionNeto)}</span>
-                    </div>
+                  {maxCommissionRate > 0 && (
+                    <p className="text-xs text-zinc-400">Precio fijo, incluye recargo por tarjeta ({maxCommissionRate}%). No varía según el medio de pago.</p>
                   )}
                   {hasDelivery && deliveryCost > 0 && (
                     <div className="flex justify-between text-xs text-zinc-400">
@@ -332,9 +339,9 @@ export default function NuevaVentaPage() {
                     ))}
                   </div>
 
-                  {(payMethod === 'debito' || payMethod === 'credito') && commissionRate === 0 && (
+                  {(payMethod === 'debito' || payMethod === 'credito') && actualCommissionRate === 0 && (
                     <p className="text-xs text-amber-500">
-                      No tienes comisión de {payMethod} configurada.{' '}
+                      No tienes comisión de {payMethod} configurada — no se registrará el gasto real de esta venta.{' '}
                       <a href="/perfil" className="underline">Configúrala en Perfil</a>
                     </p>
                   )}

@@ -9,12 +9,21 @@ export async function POST() {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('flow_subscription_id')
+    .select('flow_subscription_id, subscription_status')
     .eq('user_id', user.id)
     .single()
 
-  if (!profile?.flow_subscription_id) {
+  if (profile?.subscription_status !== 'active') {
     return NextResponse.json({ error: 'Sin suscripción activa' }, { status: 400 })
+  }
+
+  // Estado inconsistente (activo pero sin id de suscripción en Flow): no hay nada que
+  // cancelar remoto, pero igual liberamos al usuario localmente para no dejarlo bloqueado.
+  if (!profile.flow_subscription_id) {
+    await supabase.from('profiles')
+      .update({ subscription_status: 'cancelled', cancelled_at: new Date().toISOString() })
+      .eq('user_id', user.id)
+    return NextResponse.json({ ok: true })
   }
 
   const apiKey = process.env.FLOW_API_KEY!
@@ -41,7 +50,7 @@ export async function POST() {
 
   if (result.subscriptionId) {
     await supabase.from('profiles')
-      .update({ subscription_status: 'inactive', flow_subscription_id: null })
+      .update({ subscription_status: 'cancelled', flow_subscription_id: null, cancelled_at: new Date().toISOString() })
       .eq('user_id', user.id)
     return NextResponse.json({ ok: true })
   }

@@ -325,7 +325,11 @@ export default function PerfilPage() {
             <CreditCard className="h-4 w-4 text-zinc-400" />
             Comisiones de tarjeta
           </CardTitle>
-          <CardDescription>Define el porcentaje de comisión que cobra tu procesador de pagos. Se sumará automáticamente al total cuando el cliente pague con tarjeta.</CardDescription>
+          <CardDescription>
+            Define el porcentaje de comisión que cobra tu procesador de pagos.
+            <br />
+            <strong className="text-zinc-600">Nota:</strong> en Ventas se aplica la tasa más alta entre débito y crédito directamente al precio final, para que el precio no varíe según el medio de pago. Así cuidas tu margen incluso si el cliente paga con la tarjeta más cara.
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-2 gap-4">

@@ -106,7 +106,12 @@ export async function POST() {
 
   if (subscription.subscriptionId) {
     await supabase.from('profiles')
-      .update({ subscription_status: 'active', flow_subscription_id: subscription.subscriptionId })
+      .update({
+        subscription_status: 'active',
+        flow_subscription_id: subscription.subscriptionId,
+        trial_started_at: new Date().toISOString(),
+        cancelled_at: null,
+      })
       .eq('user_id', user.id)
     return NextResponse.json({ redirectUrl: `${siteUrl}/suscripcion/bienvenida` })
   }
