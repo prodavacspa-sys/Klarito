@@ -13,7 +13,7 @@ export async function POST() {
     .eq('user_id', user.id)
     .single()
 
-  if (profile?.subscription_status !== 'active') {
+  if (!profile || profile.subscription_status !== 'active') {
     return NextResponse.json({ error: 'Sin suscripción activa' }, { status: 400 })
   }
 

@@ -49,11 +49,9 @@ export async function GET(request: Request) {
     .eq('subscription_status', 'inactive')
     .lte('created_at', day7.toISOString())
 
-  for (const user of expiredTrials ?? []) {
-    await supabase.from('profiles')
-      .update({ subscription_status: 'expired' })
-      .eq('user_id', user.user_id)
-  }
+  await Promise.all((expiredTrials ?? []).map(user =>
+    supabase.from('profiles').update({ subscription_status: 'expired' }).eq('user_id', user.user_id)
+  ))
 
   const day30 = new Date(now)
   day30.setDate(day30.getDate() - 30)
@@ -67,9 +65,7 @@ export async function GET(request: Request) {
     .eq('subscription_status', 'cancelled')
     .lte('cancelled_at', day30.toISOString())
 
-  for (const user of cancelledUsers ?? []) {
-    await purgeUser(supabase, user.user_id)
-  }
+  await Promise.all((cancelledUsers ?? []).map(user => purgeUser(supabase, user.user_id)))
 
   // 3. Trials que nunca convirtieron y quedaron 'expired': se purgan 30 días después.
   const { data: expiredUsers } = await supabase
@@ -78,9 +74,7 @@ export async function GET(request: Request) {
     .eq('subscription_status', 'expired')
     .lte('updated_at', day30.toISOString())
 
-  for (const user of expiredUsers ?? []) {
-    await purgeUser(supabase, user.user_id)
-  }
+  await Promise.all((expiredUsers ?? []).map(user => purgeUser(supabase, user.user_id)))
 
   return NextResponse.json({
     ok: true,

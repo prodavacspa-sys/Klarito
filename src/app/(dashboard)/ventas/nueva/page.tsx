@@ -91,13 +91,25 @@ export default function NuevaVentaPage() {
   const markupFactor = 1 + maxCommissionRate / 100
   const actualCommissionRate = payMethod === 'debito' ? commissionDebit : payMethod === 'credito' ? commissionCredit : 0
 
-  const cartNetoBase = cart.reduce((sum, i) => sum + i.sale_price * i.quantity, 0)
-  const cartNetoConRecargo = Math.round(cartNetoBase * markupFactor)
+  // Redondeo UNA sola vez por línea/producto; todo lo demás se DERIVA sumando esos valores
+  // ya redondeados (en vez de redondear el agregado del carrito por separado). Así el desglose
+  // del carrito, el total guardado y los sale_items siempre cuadran exacto entre sí.
+  const itemNetoConRecargo = (salePrice: number) => Math.round(salePrice * markupFactor)
+  const itemPrecioConIva = (salePrice: number) => Math.round(itemNetoConRecargo(salePrice) * (1 + IVA_RATE))
+
+  const cartNetoConRecargo = cart.reduce((sum, i) => sum + itemNetoConRecargo(i.sale_price) * i.quantity, 0)
+  const cartConIva = cart.reduce((sum, i) => sum + itemPrecioConIva(i.sale_price) * i.quantity, 0)
+
+  // El delivery también se cobra dentro del total de la venta, así que si se paga con tarjeta
+  // el procesador también descuenta comisión sobre esa parte — lleva el mismo recargo que los
+  // productos. El costo real del delivery (sin recargo) se sigue registrando tal cual en Gastos.
+  const deliveryConRecargo = Math.round(deliveryCost * markupFactor)
+  const deliveryConIva = Math.round(deliveryConRecargo * (1 + IVA_RATE))
+
   const commissionNeto = Math.round(cartNetoConRecargo * actualCommissionRate / 100)
-  const baseNeta = cartNetoConRecargo + deliveryCost
-  const ivaAmount = Math.round(baseNeta * IVA_RATE)
-  const subtotal = baseNeta + ivaAmount
-  const netAmount = baseNeta
+  const netAmount = cartNetoConRecargo + deliveryConRecargo
+  const subtotal = cartConIva + deliveryConIva
+  const ivaAmount = subtotal - netAmount
 
   async function handleConfirm() {
     if (cart.length === 0) { toast.error('El carrito está vacío'); return }
@@ -129,7 +141,7 @@ export default function NuevaVentaPage() {
         payment_type: payMethod,
         commission_rate: actualCommissionRate,
         commission_amount: commissionNeto,
-        delivery_amount: deliveryCost,
+        delivery_amount: deliveryConRecargo,
       })
       .select()
       .single()
@@ -141,8 +153,8 @@ export default function NuevaVentaPage() {
         sale_id: sale.id,
         product_id: i.id,
         quantity: i.quantity,
-        unit_price: Math.round(i.sale_price * markupFactor * 1.19),
-        subtotal: Math.round(i.sale_price * markupFactor * 1.19) * i.quantity,
+        unit_price: itemPrecioConIva(i.sale_price),
+        subtotal: itemPrecioConIva(i.sale_price) * i.quantity,
       }))
     )
 
@@ -236,7 +248,7 @@ export default function NuevaVentaPage() {
                       </p>
                     </div>
                     <div className="flex items-center gap-3">
-                      <span className="text-sm font-medium tabular-nums text-emerald-600">{fmt(Math.round(p.sale_price * markupFactor * 1.19))}</span>
+                      <span className="text-sm font-medium tabular-nums text-emerald-600">{fmt(itemPrecioConIva(p.sale_price))}</span>
                       <span className="text-xs text-zinc-400 tabular-nums">Neto: {fmt(p.sale_price)}</span>
                       <Button size="sm" variant="outline" className="h-7 w-7 p-0 border-zinc-200" onClick={() => addToCart(p)}>
                         <Plus className="h-3.5 w-3.5" />
@@ -286,7 +298,7 @@ export default function NuevaVentaPage() {
                             <Plus className="h-3 w-3" />
                           </button>
                         </div>
-                        <span className="text-sm tabular-nums font-medium text-zinc-900">{fmt(Math.round(item.sale_price * markupFactor) * item.quantity)}</span>
+                        <span className="text-sm tabular-nums font-medium text-zinc-900">{fmt(itemNetoConRecargo(item.sale_price) * item.quantity)}</span>
                       </div>
                     </div>
                   ))}
@@ -300,10 +312,10 @@ export default function NuevaVentaPage() {
                   {maxCommissionRate > 0 && (
                     <p className="text-xs text-zinc-400">Precio fijo, incluye recargo por tarjeta ({maxCommissionRate}%). No varía según el medio de pago.</p>
                   )}
-                  {hasDelivery && deliveryCost > 0 && (
+                  {hasDelivery && deliveryConRecargo > 0 && (
                     <div className="flex justify-between text-xs text-zinc-400">
                       <span>Delivery</span>
-                      <span className="tabular-nums">+{fmt(deliveryCost)}</span>
+                      <span className="tabular-nums">+{fmt(deliveryConRecargo)}</span>
                     </div>
                   )}
                   <div className="flex justify-between text-xs text-zinc-400">

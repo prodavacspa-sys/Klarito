@@ -102,7 +102,7 @@ export default function VentasPage() {
                     </p>
                     <p className="text-xs text-zinc-400 mt-0.5">
                       {sale.sale_items?.map(i => `${i.quantity}× ${i.product?.name}`).join(', ')}
-                      {!!sale.delivery_amount && sale.delivery_amount > 0 && ` + delivery ${fmt(sale.delivery_amount)}`}
+                      {sale.delivery_amount != null && sale.delivery_amount > 0 && ` + delivery ${fmt(sale.delivery_amount)}`}
                     </p>
                   </div>
                   <div className="text-right">
