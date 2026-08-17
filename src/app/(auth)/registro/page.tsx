@@ -83,6 +83,22 @@ export default function RegistroPage() {
     if (typeof window !== 'undefined' && window.fbq) {
       window.fbq('track', 'Lead')
     }
+
+    // Fire-and-forget: no debe bloquear ni fallar el registro si el aviso falla.
+    fetch('/api/notify/new-signup', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        businessName: form.businessName,
+        firstName: form.firstName,
+        lastName: form.lastName,
+        email: form.email,
+        phone: form.phone,
+        empresaType: form.empresaType,
+        referralCode: form.referralCode || null,
+      }),
+    }).catch(() => {})
+
     setStep('sent')
     setLoading(false)
   }

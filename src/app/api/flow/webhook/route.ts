@@ -1,6 +1,6 @@
 import { createHmac } from 'crypto'
 import { NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { sendWelcomeEmail, sendPaymentSuccessEmail, sendPaymentFailedEmail } from '@/lib/email'
 import { creditReferrer } from '@/lib/referrals'
 
@@ -26,7 +26,9 @@ export async function POST(request: Request) {
   const customerId = params.customerId
   const subscriptionId = params.subscriptionId
 
-  const supabase = await createClient()
+  // Llamada server-to-server de Flow, sin sesión de usuario: el cliente admin
+  // (service_role) es obligatorio aquí, con anon key RLS bloquea todo en silencio.
+  const supabase = createAdminClient()
 
   const { data: profile } = await supabase
     .from('profiles')
@@ -54,7 +56,7 @@ export async function POST(request: Request) {
       .update({ subscription_status: 'active', cancelled_at: null })
       .eq('flow_customer_id', customerId)
     await sendPaymentSuccessEmail(email, businessName)
-    await creditReferrer(customerId) // customerId es flow_customer_id, ya corregido en referrals.ts
+    await creditReferrer(supabase, customerId) // customerId es flow_customer_id, ya corregido en referrals.ts
   }
 
   // 'cancelled', 'expired' y 'charge_failed' se tratan igual: dejan de estar activos y

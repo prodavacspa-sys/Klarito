@@ -45,6 +45,7 @@ type RecipeSummary = {
 const UNITS = ['unidad', 'kg', 'g', 'lt', 'ml', 'taza', 'cucharada', 'hora', 'metro']
 
 const emptyItem = (): RecipeItem => ({ name: '', quantity: '', unit: 'unidad', unit_cost: '' })
+const MAX_RECIPE_ITEMS = 50
 
 export default function CostosPage() {
   const supabase = createClient()
@@ -117,7 +118,13 @@ export default function CostosPage() {
     setItems(prev => prev.map((item, i) => i === idx ? { ...item, [key]: value } : item))
   }
 
-  function addItem() { setItems(prev => [...prev, emptyItem()]) }
+  function addItem() {
+    if (items.length >= MAX_RECIPE_ITEMS) {
+      toast.error(`Máximo ${MAX_RECIPE_ITEMS} insumos por receta`)
+      return
+    }
+    setItems(prev => [...prev, emptyItem()])
+  }
   function removeItem(idx: number) { setItems(prev => prev.filter((_, i) => i !== idx)) }
 
   const totalVariable = items.reduce((sum, i) => sum + (parseFloat(i.quantity) || 0) * (parseFloat(i.unit_cost) || 0), 0)
@@ -260,7 +267,7 @@ export default function CostosPage() {
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <Label>Insumos y costos variables</Label>
-                    <Button type="button" variant="outline" size="sm" onClick={addItem} className="border-zinc-200 text-zinc-600 h-7 text-xs">
+                    <Button type="button" variant="outline" size="sm" onClick={addItem} disabled={items.length >= MAX_RECIPE_ITEMS} className="border-zinc-200 text-zinc-600 h-7 text-xs disabled:opacity-50">
                       <Plus className="h-3 w-3 mr-1" /> Agregar insumo
                     </Button>
                   </div>

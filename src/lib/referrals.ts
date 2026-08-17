@@ -1,5 +1,9 @@
 import { createClient } from '@/lib/supabase/server'
 import { createHmac } from 'crypto'
+import type { SupabaseClient } from '@supabase/supabase-js'
+import type { Database } from '@/types/database'
+
+type AnySupabaseClient = SupabaseClient<Database>
 
 export function generateReferralCode(userId: string): string {
   return 'KL' + userId.replace(/-/g, '').substring(0, 8).toUpperCase()
@@ -37,9 +41,10 @@ async function flowPost(endpoint: string, params: Record<string, string>) {
   return res.json()
 }
 
-export async function creditReferrer(flowCustomerId: string) {
-  const supabase = await createClient()
-
+// Recibe el cliente Supabase por parámetro en vez de crearlo internamente porque el
+// único caller (webhook de Flow) corre sin sesión de usuario — necesita el cliente
+// admin (service_role) para poder escribir, ya que con anon key RLS lo bloquea.
+export async function creditReferrer(supabase: AnySupabaseClient, flowCustomerId: string) {
   // Resolver flow_customer_id → user_id
   const { data: referredProfile } = await supabase
     .from('profiles')
@@ -65,12 +70,10 @@ export async function creditReferrer(flowCustomerId: string) {
     .eq('referred_user_id', referredProfile.user_id)
 
   // Aplicar descuento según cantidad de referidos completados
-  await updateReferralDiscount(referrerProfile.user_id)
+  await updateReferralDiscount(supabase, referrerProfile.user_id)
 }
 
-export async function updateReferralDiscount(referrerUserId: string) {
-  const supabase = await createClient()
-
+export async function updateReferralDiscount(supabase: AnySupabaseClient, referrerUserId: string) {
   // Contar referidos completados
   const { count } = await supabase
     .from('referrals')

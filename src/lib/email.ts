@@ -3,6 +3,10 @@ import { Resend } from 'resend'
 const resend = new Resend(process.env.RESEND_API_KEY)
 const FROM = 'Klarito <onboarding@resend.dev>'
 
+function escapeHtml(str: string) {
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+}
+
 export async function sendWelcomeEmail(email: string, businessName: string) {
   await resend.emails.send({
     from: FROM,
@@ -81,6 +85,36 @@ export async function sendContactEmail(name: string, email: string, message: str
         <p style="color: #52525b; margin: 0 0 4px;"><strong>Email:</strong> ${email}</p>
         <p style="color: #52525b; margin: 16px 0 4px;"><strong>Mensaje:</strong></p>
         <p style="color: #52525b; background: #f4f4f5; padding: 16px; border-radius: 8px; white-space: pre-wrap;">${message}</p>
+      </div>
+    `,
+  })
+}
+
+export async function sendNewSignupNotification(data: {
+  businessName: string
+  firstName: string
+  lastName: string
+  email: string
+  phone: string
+  empresaType: string
+  referralCode?: string | null
+}) {
+  const e = escapeHtml
+  await resend.emails.send({
+    from: FROM,
+    to: 'prodavac.spa@gmail.com',
+    replyTo: data.email || undefined,
+    subject: `Nuevo registro en Klarito — ${e(data.businessName || data.email || 'sin nombre')}`,
+    html: `
+      <div style="font-family: sans-serif; max-width: 520px; margin: 0 auto; padding: 32px;">
+        <h2 style="font-size: 20px; color: #18181b; margin-bottom: 4px;">Nueva cuenta creada en Klarito</h2>
+        <hr style="border: none; border-top: 1px solid #e4e4e7; margin: 16px 0;" />
+        <p style="color: #52525b; margin: 0 0 4px;"><strong>Negocio:</strong> ${e(data.businessName || '(sin nombre)')}</p>
+        <p style="color: #52525b; margin: 0 0 4px;"><strong>Contacto:</strong> ${e(data.firstName)} ${e(data.lastName)}</p>
+        <p style="color: #52525b; margin: 0 0 4px;"><strong>Email:</strong> ${e(data.email)}</p>
+        <p style="color: #52525b; margin: 0 0 4px;"><strong>Teléfono:</strong> ${e(data.phone)}</p>
+        <p style="color: #52525b; margin: 0 0 4px;"><strong>Tipo:</strong> ${data.empresaType === 'formal' ? 'Formal (con RUT empresa)' : 'Informal'}</p>
+        ${data.referralCode ? `<p style="color: #52525b; margin: 0 0 4px;"><strong>Código de referido usado:</strong> ${e(data.referralCode)}</p>` : ''}
       </div>
     `,
   })
